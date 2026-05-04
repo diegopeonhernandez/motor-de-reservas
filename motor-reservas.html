@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escápate · Motor de Reservas y Extranet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f2eb; --surface: #ffffff; --verde: #5b7f3b; --verde-d: #3a5225;
+            --verde-l: #eef3e6; --ocre: #b8862d; --tierra: #8b6f47; --tierra-l: #f0e8d8;
+            --barn: #6b4226; --text: #2c2820; --text-muted: #7a7265; --border: #ddd6c8;
+            --shadow: 0 4px 24px rgba(60,40,20,0.06); --radius: 12px; --danger: #c84040;
+            --success: #5b7f3b;
+        }
+        .dark-mode {
+            --bg: #1a1814; --surface: #242018; --card: #2c2820; --border: rgba(255,255,255,0.06);
+            --text: #e8e2d4; --text-muted: #9a9080; --shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+        h1, h2, h3, .brand { font-family: 'Fraunces', serif; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 5%; background: rgba(245,242,235,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .dark-mode nav { background: rgba(26,24,20,0.9); }
+        .brand { font-size: 22px; font-weight: 600; color: var(--verde); cursor: pointer; display: flex; align-items: baseline; gap: 2px; }
+        .brand span { color: var(--barn); }
+        .btn { background: var(--verde); color: white; border: none; padding: 10px 22px; border-radius: 10px; font-weight: 500; cursor: pointer; transition: 0.3s; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; }
+        .btn:hover { background: var(--verde-d); transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1.5px solid var(--verde); color: var(--verde); }
+        .btn-outline:hover { background: var(--verde); color: white; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #a03030; }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+
+        /* AUTH */
+        .auth-overlay { background: rgba(20,16,10,0.85); backdrop-filter: blur(16px); z-index: 5000; display: none; align-items: center; justify-content: center; position: fixed; inset: 0; }
+        .auth-card { max-width: 420px; width: 92%; background: var(--surface); border-radius: 20px; padding: 40px 32px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); position: relative; color: var(--text); }
+        .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; background: var(--bg); border-radius: 10px; padding: 4px; }
+        .auth-tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9rem; color: var(--text-muted); transition: 0.3s; border: none; background: transparent; }
+        .auth-tab.active { background: var(--surface); color: var(--verde); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .auth-form .form-group { margin-bottom: 16px; }
+        .auth-form .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.85rem; color: var(--text-muted); }
+        .auth-form .form-group input { width: 100%; padding: 11px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; font-size: 0.95rem; }
+        .auth-form .form-group input:focus { outline: none; border-color: var(--verde); }
+        .auth-divider { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin: 16px 0; }
+        .auth-google { width: 100%; padding: 11px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; }
+        .auth-google:hover { background: var(--bg); }
+        .auth-error { background: rgba(200,64,64,0.08); color: var(--danger); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+        .auth-close { position: absolute; top: 16px; right: 16px; border: none; background: transparent; font-size: 1.3rem; color: var(--text-muted); cursor: pointer; }
+
+        /* USER MENU */
+        .user-menu-wrap { position: relative; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--verde); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
+        .user-avatar:hover { border-color: var(--verde); }
+        .user-dropdown { position: absolute; top: 48px; right: 0; background: var(--surface); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); border: 1px solid var(--border); min-width: 240px; display: none; z-index: 200; overflow: hidden; }
+        .user-dropdown.show { display: block; }
+        .user-dropdown-header { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+        .user-dropdown-header .name { font-weight: 600; font-size: 0.95rem; }
+        .user-dropdown-header .email { font-size: 0.8rem; color: var(--text-muted); }
+        .user-dropdown-item { padding: 12px 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; transition: 0.2s; }
+        .user-dropdown-item:hover { background: var(--bg); }
+        .user-dropdown-item.danger { color: var(--danger); }
+        .user-dropdown-sep { height: 1px; background: var(--border); }
+
+        /* HERO SLIDER */
+        .hero-clean { position: relative; overflow: hidden; height: 540px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .hero-slides { position: absolute; inset: 0; }
+        .hero-slide { position: absolute; inset: 0; opacity: 0; background-size: cover; background-position: center; transition: opacity 1.5s ease-in-out; }
+        .hero-slide.active { opacity: 1; }
+        .hero-clean::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(20,18,12,0.30) 0%, rgba(20,18,12,0.50) 100%); }
+        .hero-clean-content { position: relative; z-index: 2; color: #fff; max-width: 650px; padding: 0 24px; }
+        .hero-clean-content h1 { font-size: 3.2rem; font-weight: 300; line-height: 1.15; margin-bottom: 16px; text-shadow: 0 2px 20px rgba(0,0,0,0.25); }
+        .hero-clean-content p { font-size: 1.1rem; font-weight: 300; opacity: 0.92; line-height: 1.6; }
+        .hero-accent { display: inline-block; width: 40px; height: 2px; background: var(--ocre); margin: 16px auto; border-radius: 1px; }
+        .hero-dots { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; gap: 10px; align-items: center; }
+        .hero-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.35); border: 1.5px solid rgba(255,255,255,0.5); cursor: pointer; transition: 0.4s; }
+        .hero-dot.active { background: var(--ocre); border-color: var(--ocre); transform: scale(1.3); }
+        .hero-scene { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 3; font-size: 0.75rem; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.6s; }
+
+        /* SEARCH */
+        .search-section { max-width: 1100px; margin: -50px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .search-card { background: var(--surface); border-radius: 20px; padding: 32px 36px; box-shadow: 0 12px 40px rgba(60,40,20,0.1); border: 1px solid var(--border); }
+        .search-header { text-align: center; margin-bottom: 24px; }
+        .search-header h2 { font-size: 1.5rem; color: var(--verde-d); font-weight: 600; margin-bottom: 4px; }
+        .search-header p { font-size: 0.9rem; color: var(--text-muted); }
+        .ee-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px; }
+        .emotion-badge { background: var(--bg); border-radius: 14px; padding: 14px 12px; border: 1.5px solid transparent; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.3s; }
+        .emotion-badge:hover { border-color: var(--verde); transform: translateY(-2px); }
+        .emotion-badge.active { background: var(--verde-l); border-color: var(--verde); }
+        .emotion-icon-wrap { font-size: 1.6rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--surface); border-radius: 10px; flex-shrink: 0; }
+        .emotion-badge.active .emotion-icon-wrap { background: white; }
+        .emotion-title { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        .emotion-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.2; margin-top: 2px; }
+        .search-row { display: flex; align-items: flex-end; gap: 12px; background: var(--bg); border-radius: 14px; padding: 6px; }
+        .search-field { flex: 1; padding: 12px 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .search-field label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; color: var(--text-muted); }
+        .search-field input { border: none; outline: none; font-size: 0.95rem; font-family: inherit; color: var(--text); background: transparent; padding: 4px 0; width: 100%; }
+        .search-field input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.5; }
+        .search-divider { width: 1px; height: 44px; background: var(--border); align-self: center; }
+        .search-btn { padding: 14px 28px; font-size: 1rem; border-radius: 10px; white-space: nowrap; font-family: 'Fraunces', serif; font-weight: 600; background: linear-gradient(135deg, var(--verde), var(--verde-d)); color: white; border: none; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(91,127,59,0.25); }
+        .search-btn:hover { box-shadow: 0 6px 18px rgba(91,127,59,0.35); transform: translateY(-1px); }
+        .rural-divider { text-align: center; padding: 50px 0 10px; color: var(--text-muted); }
+        .rural-divider::before, .rural-divider::after { content: ''; display: inline-block; width: 60px; height: 1px; background: var(--border); vertical-align: middle; margin: 0 16px; }
+
+        /* MARKETPLACE */
+        .marketplace { padding: 30px 5% 60px; max-width: 1400px; margin: 0 auto; }
+        .marketplace > h2 { font-size: 1.8rem; font-weight: 400; margin-bottom: 8px; color: var(--verde-d); }
+        .marketplace-sub { color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: 0.35s; cursor: pointer; border: 1px solid var(--border); }
+        .card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(60,40,20,0.12); }
+        .card-img { width: 100%; height: 200px; object-fit: cover; }
+        .card-body { padding: 18px 20px; }
+        .card-title { font-size: 1.25rem; color: var(--text); margin-bottom: 6px; }
+        .card-loc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px; }
+        .card-price { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border); }
+        .price-val { font-size: 1.4rem; font-family: 'Fraunces', serif; color: var(--verde); font-weight: 600; }
+        .badge { background: var(--verde-l); color: var(--verde); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+        .filter-chip { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); font-size: 0.82rem; cursor: pointer; transition: 0.3s; color: var(--text); }
+        .filter-chip.active { background: var(--verde); color: white; border-color: var(--verde); }
+        .filter-chip:hover { border-color: var(--verde); }
+
+        /* PROPERTY DETAIL MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1000; overflow-y: auto; }
+        .modal-header { padding: 16px 5%; display: flex; justify-content: space-between; align-items: center; background: var(--surface); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .modal-content { max-width: 1200px; margin: 30px auto; padding: 0 20px 60px; }
+        .mosaic { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 200px 200px; gap: 12px; border-radius: var(--radius); overflow: hidden; margin-bottom: 30px; }
+        .mosaic img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; cursor: pointer; }
+        .mosaic img:hover { filter: brightness(0.9); }
+        .m-big { grid-column: span 1; grid-row: span 2; }
+        .room-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+        .room-table th, .room-table td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        .room-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+        .amenity-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        .amenity-tag { background: var(--verde-l); color: var(--verde-d); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
+        .review-section { margin-top: 30px; }
+        .review-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .review-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .review-author { font-weight: 600; }
+        .review-date { font-size: 0.8rem; color: var(--text-muted); }
+        .review-stars { color: var(--ocre); margin-bottom: 6px; }
+        .review-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+
+        /* CHECKOUT MODAL */
+        .checkout-overlay { background: rgba(20,16,10,0.8); backdrop-filter: blur(6px); z-index: 2000; display: none; align-items: flex-start; justify-content: center; position: fixed; inset: 0; padding: 40px 20px; overflow-y: auto; }
+        .checkout-card { max-width: 800px; width: 100%; background: var(--surface); border-radius: 20px; padding: 36px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .checkout-summary { background: var(--bg); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .checkout-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; }
+        .checkout-total { display: flex; justify-content: space-between; padding-top: 12px; margin-top: 8px; border-top: 2px solid var(--border); font-size: 1.1rem; font-weight: 700; }
+        .checkout-total .price { color: var(--verde); font-size: 1.3rem; }
+        #stripe-element { padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); margin-bottom: 16px; min-height: 44px; }
+        .stripe-pay-btn { width: 100%; padding: 14px; font-size: 1.05rem; border-radius: 10px; background: linear-gradient(135deg, var(--verde), var(--verde-d)); color: white; border: none; cursor: pointer; font-weight: 600; font-family: 'Fraunces', serif; }
+        .stripe-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .checkout-secure { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; justify-content: center; }
+
+        /* PROVIDER REGISTRATION */
+        .provider-reg-overlay { background: rgba(20,16,10,0.85); backdrop-filter: blur(16px); z-index: 4000; display: none; align-items: center; justify-content: center; position: fixed; inset: 0; }
+        .provider-reg-card { max-width: 600px; width: 92%; background: var(--surface); border-radius: 20px; padding: 40px 36px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); position: relative; color: var(--text); max-height: 90vh; overflow-y: auto; }
+        .reg-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .reg-type-card { border: 2px solid var(--border); border-radius: 14px; padding: 20px 16px; cursor: pointer; text-align: center; transition: 0.3s; }
+        .reg-type-card:hover { border-color: var(--verde); }
+        .reg-type-card.selected { border-color: var(--verde); background: var(--verde-l); }
+        .reg-type-icon { font-size: 2.2rem; margin-bottom: 8px; }
+        .reg-type-name { font-weight: 600; font-size: 0.95rem; }
+        .reg-type-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+        .reg-step { display: none; }
+        .reg-step.active { display: block; }
+        .reg-progress { display: flex; gap: 6px; margin-bottom: 24px; }
+        .reg-progress-step { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: 0.4s; }
+        .reg-progress-step.done { background: var(--verde); }
+        .reg-progress-step.current { background: var(--verde); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.85rem; color: var(--text-muted); }
+        .form-control { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; font-size: 0.9rem; }
+        .form-control:focus { outline: none; border-color: var(--verde); }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+
+        /* USER PROFILE / RESERVATIONS */
+        .profile-overlay { background: rgba(20,16,10,0.85); backdrop-filter: blur(16px); z-index: 4000; display: none; align-items: flex-start; justify-content: center; position: fixed; inset: 0; padding: 40px 20px; overflow-y: auto; }
+        .profile-card { max-width: 900px; width: 100%; background: var(--surface); border-radius: 20px; padding: 36px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); position: relative; color: var(--text); }
+        .profile-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .profile-tab { padding: 12px 20px; cursor: pointer; font-weight: 500; font-size: 0.9rem; color: var(--text-muted); border-bottom: 2px solid transparent; transition: 0.3s; }
+        .profile-tab.active { color: var(--verde); border-bottom-color: var(--verde); }
+        .profile-panel { display: none; }
+        .profile-panel.active { display: block; }
+        .booking-card { border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; display: flex; gap: 16px; align-items: center; }
+        .booking-img { width: 80px; height: 60px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+        .booking-info { flex: 1; }
+        .booking-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .booking-info p { font-size: 0.82rem; color: var(--text-muted); }
+        .booking-status { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .booking-status.confirmada { background: var(--verde-l); color: var(--verde); }
+        .booking-status.pendiente { background: rgba(184,134,45,0.1); color: var(--ocre); }
+        .booking-status.cancelada { background: rgba(200,64,64,0.08); color: var(--danger); }
+
+        /* WIZARD */
+        .wiz-overlay { background: rgba(20,16,10,0.85); backdrop-filter: blur(16px); z-index: 3000; display: none; align-items: center; justify-content: center; position: fixed; inset: 0; }
+        .wiz-card { max-width: 660px; width: 92%; background: var(--surface); border-radius: 20px; padding: 40px 34px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); position: relative; color: var(--text); }
+        .wiz-progress { display: flex; gap: 6px; margin-bottom: 28px; }
+        .wiz-progress-step { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: 0.4s; }
+        .wiz-progress-step.done { background: var(--verde); }
+        .wiz-progress-step.current { background: linear-gradient(90deg, var(--verde), #6ab04c); }
+        .wiz-step-title { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 6px; color: var(--verde-d); font-weight: 600; }
+        .wiz-step-sub { font-size: 0.92rem; color: var(--text-muted); margin-bottom: 24px; }
+        .wiz-options { display: grid; gap: 8px; }
+        .wiz-option { background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: 0.25s; display: flex; align-items: center; gap: 12px; }
+        .wiz-option:hover { border-color: var(--verde); background: var(--verde-l); }
+        .wiz-option.selected { border-color: var(--verde); background: var(--verde-l); box-shadow: 0 0 0 2px rgba(91,127,59,0.15); }
+        .wiz-option-icon { font-size: 1.5rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--surface); border-radius: 8px; }
+        .wiz-option-text { flex: 1; }
+        .wiz-option-title { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+        .wiz-option-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; line-height: 1.3; }
+        .wiz-nav { display: flex; justify-content: space-between; margin-top: 24px; gap: 10px; }
+        .wiz-nav button { padding: 10px 24px; border-radius: 10px; font-size: 0.9rem; }
+        .wiz-multi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* EXTRANET */
+        .extranet { display: none; min-height: 100vh; }
+        .ex-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 70px); }
+        .sidebar { background: var(--card, var(--surface)); border-right: 1px solid var(--border); padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar-menu { list-style: none; margin-top: 20px; flex: 1; }
+        .sidebar-menu li { padding: 12px 20px; margin-bottom: 4px; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .sidebar-menu li:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .sidebar-menu li.active { background: var(--verde); color: white; }
+        .ex-content { padding: 40px; max-width: 1400px; }
+        .ex-panel { display: none; animation: fadeIn 0.4s ease; }
+        .ex-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .panel-card { background: var(--card, var(--surface)); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 30px; }
+        .panel-title { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 20px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: var(--card, var(--surface)); border-radius: 14px; padding: 24px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .kpi-card::after { content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 50%; transform: translate(20px, -20px); opacity: 0.08; }
+        .kpi-card.verde::after { background: var(--verde); } .kpi-card.ocre::after { background: var(--ocre); }
+        .kpi-card.blue::after { background: #3a7ac8; } .kpi-card.red::after { background: #c84040; }
+        .kpi-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .kpi-value { font-size: 2rem; font-family: 'Fraunces', serif; font-weight: 600; }
+        .kpi-trend { font-size: 0.8rem; margin-top: 6px; }
+        .kpi-trend.up { color: var(--verde); } .kpi-trend.down { color: #c84040; }
+        .occ-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .occ-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .occ-bar { width: 100%; max-width: 40px; border-radius: 6px 6px 0 0; transition: height 0.6s; min-height: 8px; }
+        .occ-label { font-size: 0.7rem; color: var(--text-muted); }
+        .reservas-table { width: 100%; border-collapse: collapse; background: var(--card, var(--surface)); border-radius: 12px; overflow: hidden; }
+        .reservas-table th { padding: 14px 18px; text-align: left; background: rgba(0,0,0,0.03); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+        .reservas-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .status-badge.confirmada { background: var(--verde-l); color: var(--verde-d); }
+        .status-badge.pendiente { background: rgba(184,134,45,0.15); color: var(--ocre); }
+        .status-badge.cancelada { background: rgba(200,64,64,0.1); color: #c84040; }
+        .channel-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+        .channel-tag.escapate { background: var(--verde-l); color: var(--verde); }
+        .channel-tag.booking { background: rgba(0,55,110,0.1); color: #00376e; }
+        .channel-tag.airbnb { background: rgba(255,90,95,0.1); color: #ff5a5f; }
+        .chat-layout { display: grid; grid-template-columns: 300px 1fr; height: 600px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card, var(--surface)); }
+        .chat-list { border-right: 1px solid var(--border); overflow-y: auto; }
+        .chat-item { padding: 16px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; display: flex; gap: 12px; align-items: flex-start; }
+        .chat-item:hover { background: rgba(255,255,255,0.03); } .chat-item.active { background: rgba(74,140,40,0.1); border-left: 3px solid var(--verde); }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1rem; flex-shrink: 0; }
+        .chat-preview { flex: 1; min-width: 0; } .chat-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 3px; }
+        .chat-last { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+        .chat-main { display: flex; flex-direction: column; }
+        .chat-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 70%; padding: 12px 16px; border-radius: 16px; font-size: 0.9rem; line-height: 1.4; }
+        .msg.received { align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        .msg.sent { align-self: flex-end; background: var(--verde); color: white; border-bottom-right-radius: 4px; }
+        .msg-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+        .chat-input { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .chat-input input { flex: 1; padding: 10px 16px; border-radius: 24px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text); font-family: inherit; font-size: 0.9rem; }
+        .chat-input input:focus { outline: none; border-color: var(--verde); }
+        .serv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .serv-card { background: var(--card, var(--surface)); border-radius: 12px; border: 1px solid var(--border); padding: 24px; transition: 0.3s; }
+        .serv-card:hover { border-color: var(--verde); transform: translateY(-2px); }
+        .serv-icon { font-size: 2rem; margin-bottom: 12px; } .serv-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; }
+        .serv-price { color: var(--verde); font-weight: 600; font-size: 1.2rem; font-family: 'Fraunces', serif; }
+        .serv-toggle { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+        .toggle-switch { width: 40px; height: 22px; background: rgba(255,255,255,0.1); border-radius: 11px; position: relative; cursor: pointer; transition: 0.3s; }
+        .toggle-switch.active { background: var(--verde); }
+        .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle-switch.active::after { left: 20px; }
+        .comunidad-feed { display: flex; flex-direction: column; gap: 16px; }
+        .feed-item { background: var(--card, var(--surface)); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+        .feed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .feed-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--ocre); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; }
+        .feed-author { font-weight: 600; font-size: 0.9rem; } .feed-date { font-size: 0.75rem; color: var(--text-muted); }
+        .feed-tag { padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: auto; }
+        .feed-tag.evento { background: rgba(184,134,45,0.15); color: var(--ocre); }
+        .feed-tag.oferta { background: var(--verde-l); color: var(--verde); }
+        .feed-tag.aviso { background: rgba(58,122,200,0.1); color: #3a7ac8; }
+        .pms-grid { display: grid; grid-template-columns: 200px repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 20px; }
+        .pms-header, .pms-cell { background: var(--surface); padding: 10px; min-height: 60px; font-size: 0.85rem; }
+        .pms-header { font-weight: 600; text-align: center; color: var(--text-muted); }
+        .pms-room-name { background: rgba(0,0,0,0.02); font-weight: 600; display: flex; align-items: center; padding-left: 15px; border-right: 1px solid var(--border); font-size: 0.85rem; }
+        .dark-mode .pms-room-name { background: rgba(255,255,255,0.02); }
+        .pms-book { background: var(--verde-l); color: var(--verde-d); border-radius: 4px; padding: 6px; font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; cursor: pointer; border: 1px solid var(--verde); }
+        .pms-book.external { background: rgba(58,122,200,0.1); color: #3a7ac8; border-color: rgba(58,122,200,0.4); }
+        .tag-sel { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tag-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
+        .tag-btn.active { background: var(--verde); color: white; border-color: var(--verde); }
+
+        /* LOADER */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader { display: flex; justify-content: center; padding: 40px; }
+        .loader-circle { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--verde); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+        /* TOAST */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast { padding: 14px 20px; border-radius: 12px; background: var(--surface); box-shadow: 0 8px 30px rgba(0,0,0,0.15); border: 1px solid var(--border); font-size: 0.9rem; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease; max-width: 360px; }
+        .toast.success { border-left: 4px solid var(--verde); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        @media (max-width: 900px) {
+            .ee-options { grid-template-columns: repeat(2, 1fr); }
+            .search-row { flex-direction: column; } .search-divider { display: none; } .search-btn { width: 100%; }
+            .hero-clean { height: 420px; } .hero-clean-content h1 { font-size: 2.2rem; }
+            .ex-layout { grid-template-columns: 1fr; } .sidebar { display: none; }
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
+            .chat-layout { grid-template-columns: 1fr; } .chat-list { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+            .reg-type-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav>
+        <div class="brand" onclick="navigate('home')">escá<span>pate</span></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div id="auth-buttons">
+                <button class="btn btn-outline btn-sm" onclick="openAuth()">Iniciar sesión</button>
+                <button class="btn btn-sm" onclick="openAuth('register')" style="margin-left:6px;">Registrarse</button>
+            </div>
+            <div id="user-area" style="display:none;" class="user-menu-wrap">
+                <div class="user-avatar" id="user-avatar" onclick="toggleUserMenu()"></div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <div class="user-dropdown-header">
+                        <div class="name" id="dd-name"></div>
+                        <div class="email" id="dd-email"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="openProfile()">📋 Mis Reservas</div>
+                    <div class="user-dropdown-item" onclick="navigate('extranet')" id="dd-provider-link" style="display:none;">🏠 Mi Panel Proveedor</div>
+                    <div class="user-dropdown-item" onclick="openProviderReg()" id="dd-become-provider">🤝 Quiero ser proveedor</div>
+                    <div class="user-dropdown-sep"></div>
+                    <div class="user-dropdown-item danger" onclick="logout()">🚪 Cerrar sesión</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="auth-overlay">
+        <div class="auth-card">
+            <button class="auth-close" onclick="closeAuth()">×</button>
+            <h2 style="text-align:center;margin-bottom:20px;font-size:1.6rem;color:var(--verde-d);">Bienvenido a Escápate</h2>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Crear cuenta</button>
+            </div>
+            <div id="auth-error" class="auth-error"></div>
+            <button class="auth-google" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"/></svg>Continuar con Google</button>
+            <div class="auth-divider">o con email</div>
+
+            <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group"><label>Email</label><input type="email" id="login-email" required placeholder="tu@email.com"></div>
+                <div class="form-group"><label>Contraseña</label><input type="password" id="login-password" required placeholder="Tu contraseña"></div>
+                <button type="submit" class="btn" style="width:100%;padding:12px;">Entrar</button>
+            </form>
+
+            <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group"><label>Nombre</label><input type="text" id="reg-name" required placeholder="Tu nombre"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="reg-email" required placeholder="tu@email.com"></div>
+                <div class="form-group"><label>Teléfono</label><input type="tel" id="reg-phone" placeholder="+34 600 000 000"></div>
+                <div class="form-group"><label>Contraseña</label><input type="password" id="reg-password" required minlength="6" placeholder="Mínimo 6 caracteres"></div>
+                <button type="submit" class="btn" style="width:100%;padding:12px;">Crear cuenta</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MARKETPLACE VIEW -->
+    <div id="view-home">
+        <section class="hero-clean">
+            <div class="hero-slides" id="hero-slides"></div>
+            <div class="hero-scene" id="hero-scene"></div>
+            <div class="hero-clean-content">
+                <h1>Desconecta del ruido, <br>conecta con lo esencial</h1>
+                <div class="hero-accent"></div>
+                <p>Alojamientos rurales auténticos, sin comisiones. Trato directo con quien cuida cada detalle.</p>
+            </div>
+            <div class="hero-dots" id="hero-dots"></div>
+        </section>
+
+        <section class="search-section">
+            <div class="search-card">
+                <div class="search-header"><h2>¿Qué tipo de escapada buscas?</h2><p>Elige un estilo y encuentra tu rincón</p></div>
+                <div class="ee-options" id="emotions-bar"></div>
+                <div class="search-row">
+                    <div class="search-field"><label>Llegada</label><input type="text" id="checkin" placeholder="¿Cuándo llegas?" onfocus="this.type='date';this.min=new Date().toISOString().split('T')[0]" onblur="if(!this.value)this.type='text'" onchange="document.getElementById('checkout').min=this.value"></div>
+                    <div class="search-divider"></div>
+                    <div class="search-field"><label>Salida</label><input type="text" id="checkout" placeholder="¿Cuándo te vas?" onfocus="this.type='date';if(document.getElementById('checkin').value)this.min=document.getElementById('checkin').value" onblur="if(!this.value)this.type='text'"></div>
+                    <div class="search-divider"></div>
+                    <div class="search-field"><label>Viajeros</label><input type="number" id="search-guests" placeholder="Ej. 2" min="1" value="2"></div>
+                    <button class="search-btn" onclick="buscarPorEmocion()">Buscar</button>
+                </div>
+            </div>
+        </section>
+
+        <div class="rural-divider"></div>
+
+        <section class="marketplace">
+            <h2>Inspiración para tu viaje</h2>
+            <p class="marketplace-sub">Descubre casas rurales con alma y experiencias que merecen la pena</p>
+            <div class="filter-bar" id="filter-bar">
+                <div class="filter-chip active" data-filter="all" onclick="filterProperties('all',this)">Todos</div>
+                <div class="filter-chip" data-filter="alojamiento" onclick="filterProperties('alojamiento',this)">🏡 Alojamientos</div>
+                <div class="filter-chip" data-filter="restaurante" onclick="filterProperties('restaurante',this)">🍽️ Restaurantes</div>
+                <div class="filter-chip" data-filter="bodega" onclick="filterProperties('bodega',this)">🍷 Bodegas</div>
+                <div class="filter-chip" data-filter="hipica" onclick="filterProperties('hipica',this)">🏇 Hípicas</div>
+            </div>
+            <div class="grid" id="public-grid"></div>
+        </section>
+    </div>
+
+    <!-- PROPERTY DETAIL MODAL -->
+    <div id="modal-ficha" class="modal">
+        <div class="modal-header">
+            <div class="brand" onclick="closeModal()">escá<span>pate</span></div>
+            <button class="btn btn-outline btn-sm" onclick="closeModal()">Volver</button>
+        </div>
+        <div class="modal-content">
+            <h1 id="f-title" style="font-size:2.2rem;margin-bottom:8px;"></h1>
+            <p id="f-loc" style="color:var(--text-muted);margin-bottom:20px;font-size:1rem;">📍 <span id="f-loc-txt"></span></p>
+            <div class="mosaic" id="f-mosaic"></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;margin-top:30px;">
+                <div>
+                    <h2 style="margin-bottom:16px;">Sobre este alojamiento</h2>
+                    <p id="f-desc" style="line-height:1.8;color:var(--text-muted);"></p>
+                    <div id="f-amenities" class="amenity-list"></div>
+                    <div class="review-section">
+                        <h2 style="margin-bottom:16px;">Valoraciones</h2>
+                        <div id="f-reviews"></div>
+                    </div>
+                    <h2 style="margin:30px 0 16px;">Disponibilidad</h2>
+                    <table class="room-table"><thead><tr><th>Tipo</th><th>Capacidad</th><th>Precio/noche</th><th>Acción</th></tr></thead><tbody id="f-rooms"></tbody></table>
+                </div>
+                <div>
+                    <div class="panel-card" style="position:sticky;top:90px;">
+                        <h3 style="margin-bottom:15px;font-size:1.5rem;"><span id="f-price"></span>€ <span style="font-size:1rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:400;">/ noche</span></h3>
+                        <div style="display:flex;gap:10px;margin-bottom:16px;">
+                            <div style="flex:1;"><label style="font-size:0.8rem;">Entrada</label><input type="date" id="f-date-in" class="form-control" onchange="document.getElementById('f-date-out').min=this.value"></div>
+                            <div style="flex:1;"><label style="font-size:0.8rem;">Salida</label><input type="date" id="f-date-out" class="form-control"></div>
+                        </div>
+                        <button class="btn" style="width:100%;padding:14px;font-size:1.05rem;" onclick="abrirCheckout()">Reservar ahora</button>
+                        <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:12px;">Cancelación gratuita hasta 48h antes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKOUT OVERLAY -->
+    <div id="modal-checkout" class="checkout-overlay">
+        <div class="checkout-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                <h2 style="font-size:1.8rem;">Confirmar reserva</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeCheckout()" style="border:none;font-size:1.3rem;padding:0 8px;cursor:pointer;">×</button>
+            </div>
+            <div id="chk-step-1">
+                <div style="display:grid;grid-template-columns:1fr 320px;gap:30px;">
+                    <div>
+                        <h3 style="margin-bottom:16px;">Datos del huésped</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Nombre</label><input type="text" id="chk-name" class="form-control" required placeholder="Nombre completo"></div>
+                            <div class="form-group"><label>Teléfono</label><input type="tel" id="chk-phone" class="form-control" placeholder="+34 600 000 000"></div>
+                        </div>
+                        <div class="form-group"><label>Email</label><input type="email" id="chk-email" class="form-control" required placeholder="Para la confirmación"></div>
+                        <div class="form-group"><label>Mensaje al propietario (opcional)</label><textarea id="chk-message" class="form-control" rows="3" placeholder="Hora de llegada aproximada, necesidades especiales..."></textarea></div>
+
+                        <h3 style="margin:24px 0 16px;">Pago seguro con Stripe</h3>
+                        <div id="stripe-element"><div style="color:var(--text-muted);font-size:0.85rem;">🔒 Se cargará Stripe Elements aquí</div></div>
+                        <button class="stripe-pay-btn" id="pay-btn" onclick="procesarPago()">Pagar ahora</button>
+                        <div class="checkout-secure">🔒 Pago seguro procesado por Stripe. Tus datos están protegidos.</div>
+                    </div>
+                    <div>
+                        <div class="checkout-summary">
+                            <h3 style="margin-bottom:12px;" id="chk-property-name"></h3>
+                            <div class="checkout-line"><span>Fechas:</span><span id="chk-dates" style="font-weight:500;"></span></div>
+                            <div class="checkout-line"><span>Noches:</span><span id="chk-nights" style="font-weight:500;"></span></div>
+                            <div class="checkout-line"><span>Habitación:</span><span id="chk-room" style="font-weight:500;"></span></div>
+                            <div class="checkout-line"><span>Precio/noche:</span><span id="chk-price-night" style="font-weight:500;"></span></div>
+                            <div class="checkout-total"><span>Total</span><span class="price" id="chk-total"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="chk-step-2" style="display:none;text-align:center;padding:40px 20px;">
+                <div style="font-size:4rem;margin-bottom:16px;">✅</div>
+                <h2 style="font-size:2rem;color:var(--verde);margin-bottom:12px;">¡Reserva confirmada!</h2>
+                <p style="font-size:1.1rem;color:var(--text-muted);margin-bottom:8px;">Tu reserva ha sido procesada correctamente.</p>
+                <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:24px;">Recibirás un email de confirmación con todos los detalles.</p>
+                <button class="btn" onclick="cerrarTodo()">Volver al inicio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROVIDER REGISTRATION -->
+    <div id="modal-provider-reg" class="provider-reg-overlay">
+        <div class="provider-reg-card">
+            <button class="auth-close" onclick="closeProviderReg()">×</button>
+            <h2 style="text-align:center;font-size:1.6rem;color:var(--verde-d);margin-bottom:4px;">Únete a Escápate</h2>
+            <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-bottom:20px;">Registra tu negocio y llega a miles de viajeros</p>
+            <div class="reg-progress" id="reg-progress"></div>
+
+            <div class="reg-step active" id="reg-step-0">
+                <h3 style="margin-bottom:12px;">¿Qué tipo de negocio tienes?</h3>
+                <div class="reg-type-grid" id="reg-types">
+                    <div class="reg-type-card" onclick="selectRegType('alojamiento',this)"><div class="reg-type-icon">🏡</div><div class="reg-type-name">Casa Rural / Alojamiento</div><div class="reg-type-desc">Habitaciones, apartamentos, cabañas</div></div>
+                    <div class="reg-type-card" onclick="selectRegType('restaurante',this)"><div class="reg-type-icon">🍽️</div><div class="reg-type-name">Restaurante</div><div class="reg-type-desc">Comida local, carta, menús</div></div>
+                    <div class="reg-type-card" onclick="selectRegType('bodega',this)"><div class="reg-type-icon">🍷</div><div class="reg-type-name">Bodega / Cata</div><div class="reg-type-desc">Vinos, quesos, productos locales</div></div>
+                    <div class="reg-type-card" onclick="selectRegType('hipica',this)"><div class="reg-type-icon">🏇</div><div class="reg-type-name">Hípica / Actividades</div><div class="reg-type-desc">Equitación, rutas, aventura</div></div>
+                </div>
+                <div class="wiz-nav"><div></div><button class="btn" onclick="regNext()">Siguiente →</button></div>
+            </div>
+
+            <div class="reg-step" id="reg-step-1">
+                <h3 style="margin-bottom:12px;">Datos de tu negocio</h3>
+                <div class="form-group"><label>Nombre comercial</label><input type="text" id="reg-biz-name" class="form-control" placeholder="Ej. Finca Los Pájaros"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Ubicación</label><input type="text" id="reg-biz-loc" class="form-control" placeholder="Pueblo, Provincia"></div>
+                    <div class="form-group"><label>Teléfono de contacto</label><input type="tel" id="reg-biz-phone" class="form-control" placeholder="+34 600 000 000"></div>
+                </div>
+                <div class="form-group"><label>Descripción</label><textarea id="reg-biz-desc" class="form-control" rows="4" placeholder="Cuéntanos qué ofrece tu negocio..."></textarea></div>
+                <div class="wiz-nav"><button class="btn btn-outline" onclick="regBack()">← Atrás</button><button class="btn" onclick="regNext()">Siguiente →</button></div>
+            </div>
+
+            <div class="reg-step" id="reg-step-2">
+                <h3 style="margin-bottom:12px;">Servicios y capacidades</h3>
+                <div id="reg-dynamic-fields"></div>
+                <div class="wiz-nav"><button class="btn btn-outline" onclick="regBack()">← Atrás</button><button class="btn" onclick="submitProviderReg()">Enviar solicitud</button></div>
+            </div>
+
+            <div class="reg-step" id="reg-step-3" style="text-align:center;padding:30px 0;">
+                <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+                <h2 style="color:var(--verde);margin-bottom:8px;">¡Solicitud enviada!</h2>
+                <p style="color:var(--text-muted);margin-bottom:20px;">Revisaremos tu solicitud en 24-48h. Te contactaremos por email.</p>
+                <button class="btn" onclick="closeProviderReg()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER PROFILE -->
+    <div id="modal-profile" class="profile-overlay">
+        <div class="profile-card">
+            <button class="auth-close" onclick="closeProfile()">×</button>
+            <h2 style="margin-bottom:20px;">Mi cuenta</h2>
+            <div class="profile-tabs">
+                <div class="profile-tab active" onclick="switchProfileTab('my-bookings',this)">Mis Reservas</div>
+                <div class="profile-tab" onclick="switchProfileTab('my-profile',this)">Mi Perfil</div>
+            </div>
+            <div class="profile-panel active" id="panel-my-bookings">
+                <div id="my-bookings-list"></div>
+            </div>
+            <div class="profile-panel" id="panel-my-profile">
+                <div class="form-row">
+                    <div class="form-group"><label>Nombre</label><input type="text" id="profile-name" class="form-control"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="profile-email" class="form-control" disabled></div>
+                </div>
+                <div class="form-group"><label>Teléfono</label><input type="tel" id="profile-phone" class="form-control"></div>
+                <button class="btn" onclick="updateProfile()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONCIERGE WIZARD -->
+    <div id="modal-wizard" class="wiz-overlay"><div class="wiz-card"><button class="btn btn-outline" style="position:absolute;top:16px;right:16px;border:none;font-size:1.4rem;padding:0 8px;color:var(--text-muted);cursor:pointer;" onclick="document.getElementById('modal-wizard').style.display='none'">×</button><div class="wiz-progress" id="wiz-progress-bar"></div><div id="wiz-dynamic-content"></div></div></div>
+
+    <!-- EXTRANET -->
+    <div id="view-extranet" class="extranet">
+        <div class="ex-layout">
+            <div class="sidebar">
+                <div style="margin-bottom:30px;padding:0 20px;"><p style="font-size:0.75rem;color:var(--verde);font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Portal Proveedor</p><h2 style="color:var(--text);margin-top:4px;" id="ex-biz-name">Mi Negocio</h2></div>
+                <ul class="sidebar-menu">
+                    <li class="active" onclick="showExPanel('ex-inicio',this)">📊 Dashboard</li>
+                    <li onclick="showExPanel('ex-reservas',this)">📋 Reservas</li>
+                    <li onclick="showExPanel('ex-calendario',this)">📅 Calendario</li>
+                    <li onclick="showExPanel('ex-servicios',this)">🛠️ Servicios</li>
+                    <li onclick="showExPanel('ex-alojamiento',this)">⚙️ Mi Negocio</li>
+                    <li onclick="showExPanel('ex-mensajes',this)">💬 Mensajes</li>
+                    <li onclick="navigate('home')" style="margin-top:30px;color:var(--ocre);">👁️ Ver web pública</li>
+                </ul>
+            </div>
+            <div class="ex-content">
+                <div id="ex-inicio" class="ex-panel active"><h2 style="font-size:1.8rem;margin-bottom:6px;" id="ex-greeting">Buenos días 👋</h2><p style="color:var(--text-muted);margin-bottom:24px;">Resumen de tu negocio</p><div class="kpi-grid"><div class="kpi-card verde"><div class="kpi-label">Reservas este mes</div><div class="kpi-value" id="kpi-bookings">0</div><div class="kpi-trend up">Activas</div></div><div class="kpi-card ocre"><div class="kpi-label">Ingresos estimados</div><div class="kpi-value" id="kpi-revenue">0€</div><div class="kpi-trend">Este mes</div></div><div class="kpi-card blue"><div class="kpi-label">Ocupación</div><div class="kpi-value" id="kpi-occupancy">0%</div><div class="kpi-trend">Promedio</div></div><div class="kpi-card red"><div class="kpi-label">Valoración</div><div class="kpi-value" id="kpi-rating">⭐ --</div><div class="kpi-trend">Sin reseñas aún</div></div></div><div class="panel-card"><div class="panel-title" style="border:none;margin-bottom:10px;">Ocupación últimos 12 meses</div><div class="occ-chart" id="occ-chart"></div></div></div>
+                <div id="ex-reservas" class="ex-panel"><div class="panel-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 class="panel-title" style="margin-bottom:0;border:none;padding:0;">Gestión de Reservas</h2></div><div style="overflow-x:auto;"><table class="reservas-table"><thead><tr><th>Huésped</th><th>Fechas</th><th>Servicio</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="ex-reservas-body"></tbody></table></div></div></div>
+                <div id="ex-calendario" class="ex-panel"><div class="panel-card"><h2 class="panel-title">Calendario de Disponibilidad</h2><div id="admin-calendario"></div></div></div>
+                <div id="ex-servicios" class="ex-panel"><div class="panel-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 class="panel-title" style="margin-bottom:0;border:none;padding:0;">Servicios</h2><button class="btn btn-sm" onclick="addProviderService()">+ Añadir</button></div><div class="serv-grid" id="ex-servicios-grid"></div></div></div>
+                <div id="ex-alojamiento" class="ex-panel"><div class="panel-card"><h2 class="panel-title">Datos del Negocio</h2><div class="form-group"><label>Nombre</label><input type="text" id="ex-edit-name" class="form-control"></div><div class="form-group"><label>Ubicación</label><input type="text" id="ex-edit-loc" class="form-control"></div><div class="form-group"><label>Descripción</label><textarea id="ex-edit-desc" class="form-control" rows="4"></textarea></div><button class="btn" onclick="saveProviderData()">Guardar</button></div></div>
+                <div id="ex-mensajes" class="ex-panel"><div class="panel-card" style="padding:0;"><div class="chat-layout"><div class="chat-list" id="ex-chat-list"></div><div class="chat-main"><div class="chat-header"><div style="display:flex;align-items:center;gap:10px;"><div class="chat-avatar" id="ex-chat-avatar">?</div><div><div class="chat-name" id="ex-chat-name">Selecciona un chat</div></div></div></div><div class="chat-messages" id="ex-chat-messages"><div class="empty-state"><div class="icon">💬</div><p>Selecciona una conversación</p></div></div><div class="chat-input"><input type="text" id="ex-chat-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Extranet')sendExMessage()"><button class="btn btn-sm" onclick="sendExMessage()">Enviar</button></div></div></div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- FIREBASE + STRIPE SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <script>
+        // ============================
+        // FIREBASE CONFIG
+        // ============================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHow523fM8oLbs75NjhKkf4_tSl3qVJEo",
+            projectId: "erase-una-vez-1509b",
+            appId: "1:123456789:web:abcdef"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // STRIPE: Reemplaza con tu clave pública real
+        const STRIPE_KEY = "pk_test_REPLACE_WITH_YOUR_KEY";
+        let stripe = null;
+        try { stripe = Stripe(STRIPE_KEY); } catch(e) { console.log("Stripe no configurado"); }
+
+        // ============================
+        // STATE
+        // ============================
+        let currentUser = null;
+        let currentProvider = null;
+        let allProperties = [];
+        let currentProperty = null;
+        let currentRoom = null;
+        let activeEmotionIdx = -1;
+
+        // ============================
+        // AUTH
+        // ============================
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (doc.exists) {
+                    currentUser.profile = doc.data();
+                } else {
+                    const profile = { name: user.displayName || 'Usuario', email: user.email, phone: '', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                    await db.collection('users').doc(user.uid).set(profile);
+                    currentUser.profile = profile;
+                }
+                // Check if provider
+                const provSnap = await db.collection('providers').where('ownerId', '==', user.uid).limit(1).get();
+                if (!provSnap.empty) {
+                    currentProvider = provSnap.docs[0];
+                    currentUser.providerId = currentProvider.id;
+                }
+                updateUI();
+            } else {
+                currentUser = null;
+                currentProvider = null;
+                updateUI();
+            }
+        });
+
+        function updateUI() {
+            const authBtns = document.getElementById('auth-buttons');
+            const userArea = document.getElementById('user-area');
+            const ddLink = document.getElementById('dd-provider-link');
+            const ddBecome = document.getElementById('dd-become-provider');
+            if (currentUser) {
+                authBtns.style.display = 'none';
+                userArea.style.display = 'block';
+                const initials = (currentUser.profile.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('user-avatar').textContent = initials;
+                document.getElementById('dd-name').textContent = currentUser.profile.name;
+                document.getElementById('dd-email').textContent = currentUser.email;
+                ddBecome.style.display = currentProvider ? 'none' : 'block';
+                ddLink.style.display = currentProvider ? 'block' : 'none';
+            } else {
+                authBtns.style.display = 'block';
+                userArea.style.display = 'none';
+            }
+        }
+
+        function openAuth(tab) {
+            document.getElementById('auth-modal').style.display = 'flex';
+            if (tab === 'register') switchAuthTab('register');
+            else switchAuthTab('login');
+        }
+        function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
+
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            if (tab === 'login') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+            document.getElementById('auth-error').style.display = 'none';
+        }
+
+        function showAuthError(msg) {
+            const el = document.getElementById('auth-error');
+            el.textContent = msg; el.style.display = 'block';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try { await auth.signInWithEmailAndPassword(email, password); closeAuth(); toast('Sesión iniciada', 'success'); }
+            catch(err) { showAuthError(err.message); }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-password').value;
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(cred.user.uid).set({ name, email, phone, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                closeAuth(); toast('¡Cuenta creada!', 'success');
+            } catch(err) { showAuthError(err.message); }
+        }
+
+        async function googleLogin() {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
+                await db.collection('users').doc(result.user.uid).set({
+                    name: result.user.displayName, email: result.user.email, phone: '', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                closeAuth(); toast('Sesión iniciada con Google', 'success');
+            } catch(err) { showAuthError(err.message); }
+        }
+
+        async function logout() {
+            await auth.signOut();
+            document.getElementById('user-dropdown').classList.remove('show');
+            navigate('home');
+            toast('Sesión cerrada', 'success');
+        }
+
+        function toggleUserMenu() { document.getElementById('user-dropdown').classList.toggle('show'); }
+        document.addEventListener('click', (e) => {
+            const dd = document.getElementById('user-dropdown');
+            if (!e.target.closest('.user-menu-wrap')) dd.classList.remove('show');
+        });
+
+        // ============================
+        // NAVIGATION
+        // ============================
+        function navigate(view) {
+            document.getElementById('view-home').style.display = view === 'home' ? 'block' : 'none';
+            document.getElementById('view-extranet').style.display = view === 'extranet' ? 'block' : 'none';
+            if (view === 'extranet') { document.body.classList.add('dark-mode'); loadExtranet(); }
+            else { document.body.classList.remove('dark-mode'); }
+            window.scrollTo(0, 0);
+        }
+
+        // ============================
+        // TOAST
+        // ============================
+        function toast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        // ============================
+        // HERO SLIDER
+        // ============================
+        const heroScenes = [
+            { url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80', label: 'Bosques verdes' },
+            { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1920&q=80', label: 'Noches estrelladas' },
+            { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80', label: 'Cumbres majestuosas' },
+            { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80', label: 'Valles infinitos' },
+            { url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=80', label: 'Niebla entre los árboles' },
+            { url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=80', label: 'Amanecer en el campo' }
+        ];
+        let heroIdx = 0;
+        function initHeroSlider() {
+            document.getElementById('hero-slides').innerHTML = heroScenes.map((s, i) => `<div class="hero-slide ${i===0?'active':''}" style="background-image:url('${s.url}')"></div>`).join('');
+            document.getElementById('hero-dots').innerHTML = heroScenes.map((_, i) => `<div class="hero-dot ${i===0?'active':''}" onclick="goToHeroSlide(${i})"></div>`).join('');
+            document.getElementById('hero-scene').textContent = heroScenes[0].label;
+            setInterval(() => goToHeroSlide((heroIdx + 1) % heroScenes.length), 6000);
+        }
+        function goToHeroSlide(idx) {
+            heroIdx = idx;
+            document.querySelectorAll('.hero-slide').forEach((s, i) => s.classList.toggle('active', i === idx));
+            document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+            document.getElementById('hero-scene').textContent = heroScenes[idx].label;
+        }
+
+        // ============================
+        // EMOTIONS
+        // ============================
+        const emotions = [
+            { icon: "🧘", title: "Relax", desc: "Desconexión total" },
+            { icon: "🏕️", title: "Activo", desc: "Aventura y aire libre" },
+            { icon: "🍷", title: "Parejas", desc: "Escapada romántica" },
+            { icon: "🎉", title: "Grupos", desc: "Fiesta y risas" },
+            { icon: "💻", title: "Workcation", desc: "Teletrabajo rural" },
+            { icon: "✨", title: "Premium", desc: "Lujo rural" },
+            { icon: "👨‍👩‍👧", title: "Familiar", desc: "Para toda la familia" },
+            { icon: "🍽️", title: "Foodie", desc: "Gastronomía local" }
+        ];
+        function renderEmotions() {
+            document.getElementById('emotions-bar').innerHTML = emotions.map((e, idx) => `<div class="emotion-badge" onclick="selectEmotion(${idx})"><div class="emotion-icon-wrap">${e.icon}</div><div><div class="emotion-title">${e.title}</div><div class="emotion-desc">${e.desc}</div></div></div>`).join('');
+        }
+        function selectEmotion(idx) {
+            activeEmotionIdx = idx;
+            document.querySelectorAll('.emotion-badge').forEach((b, i) => b.classList.toggle('active', i === idx));
+        }
+
+        // ============================
+        // PROPERTIES FROM FIRESTORE
+        // ============================
+        async function loadProperties() {
+            const grid = document.getElementById('public-grid');
+            grid.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
+            try {
+                const snap = await db.collection('properties').where('status', '==', 'approved').get();
+                allProperties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderProperties(allProperties);
+            } catch(err) {
+                console.error(err);
+                grid.innerHTML = '<div class="empty-state"><div class="icon">🏡</div><p>Aún no hay propiedades. ¡Sé el primero en registrarte!</p><button class="btn" style="margin-top:12px;" onclick="openProviderReg()">Quiero ser proveedor</button></div>';
+            }
+        }
+
+        function renderProperties(props) {
+            const grid = document.getElementById('public-grid');
+            if (props.length === 0) { grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No se encontraron resultados con esos filtros</p></div>'; return; }
+            grid.innerHTML = props.map((p, i) => {
+                const icons = { alojamiento: '🏡', restaurante: '🍽️', bodega: '🍷', hipica: '🏇' };
+                const badge = p.type === 'alojamiento' ? `<span class="badge">Desde ${p.minPrice || '85'}€/noche</span>` : `<span class="badge">${icons[p.type] || ''} ${p.type}</span>`;
+                const photo = (p.photos && p.photos.length > 0) ? p.photos[0] : 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=400&h=300';
+                return `<div class="card" onclick="openProperty('${p.id}')"><img src="${photo}" class="card-img" onerror="this.src='https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=400&h=300'"><div class="card-body">${badge}<h3 class="card-title" style="margin-top:8px;">${p.name}</h3><p class="card-loc">📍 ${p.location}${p.rating ? ' · ⭐ ' + p.rating : ''}</p></div></div>`;
+            }).join('');
+        }
+
+        function filterProperties(type, el) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            if (type === 'all') renderProperties(allProperties);
+            else renderProperties(allProperties.filter(p => p.type === type));
+        }
+
+        async function openProperty(id) {
+            const p = allProperties.find(x => x.id === id);
+            if (!p) return;
+            currentProperty = p;
+            document.getElementById('f-title').textContent = p.name;
+            document.getElementById('f-loc-txt').textContent = p.location;
+            document.getElementById('f-desc').textContent = p.description || 'Sin descripción disponible.';
+            const photos = p.photos && p.photos.length >= 3 ? p.photos : [p.photos?.[0] || '', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&h=400', 'https://images.unsplash.com/photo-1560185013-6b12f62b217a?auto=format&fit=crop&w=400&h=400'];
+            document.getElementById('f-mosaic').innerHTML = photos.slice(0, 3).map((ph, i) => `<img src="${ph}" class="${i===0?'m-big':''}" onerror="this.style.display='none'">`).join('');
+            if (p.amenities && p.amenities.length > 0) document.getElementById('f-amenities').innerHTML = p.amenities.map(a => `<span class="amenity-tag">✨ ${a}</span>`).join('');
+            else document.getElementById('f-amenities').innerHTML = '';
+
+            // Load rooms
+            const roomsSnap = await db.collection('rooms').where('propertyId', '==', id).get();
+            const rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            document.getElementById('f-rooms').innerHTML = rooms.length > 0 ? rooms.map(r => `<tr><td><strong>${r.name}</strong><br><small style="color:var(--verde);">${(r.amenities||[]).join(' · ')}</small></td><td>${'👤'.repeat(r.capacity || 2)}</td><td><strong>${r.price}€</strong></td><td><button class="btn btn-sm" onclick='selectRoomForBooking(${JSON.stringify(r).replace(/'/g, "\\'")})'>Reservar</button></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No hay habitaciones configuradas aún</td></tr>';
+
+            document.getElementById('f-price').textContent = p.minPrice || (rooms.length > 0 ? Math.min(...rooms.map(r => r.price)) : 85);
+
+            // Load reviews
+            const revSnap = await db.collection('reviews').where('propertyId', '==', id).orderBy('createdAt', 'desc').limit(5).get();
+            const reviews = revSnap.docs.map(d => d.data());
+            document.getElementById('f-reviews').innerHTML = reviews.length > 0 ? reviews.map(r => `<div class="review-item"><div class="review-header"><span class="review-author">${r.userName || 'Anónimo'}</span><span class="review-date">${r.createdAt ? new Date(r.createdAt.toDate()).toLocaleDateString('es-ES') : ''}</span></div><div class="review-stars">${'⭐'.repeat(r.rating || 5)}</div><div class="review-text">${r.comment || ''}</div></div>`).join('') : '<p style="color:var(--text-muted);padding:16px 0;">Aún no hay valoraciones. ¡Sé el primero!</p>';
+
+            document.getElementById('modal-ficha').style.display = 'block';
+            document.getElementById('f-date-in').min = new Date().toISOString().split('T')[0];
+        }
+
+        function closeModal() { document.getElementById('modal-ficha').style.display = 'none'; }
+        function selectRoomForBooking(room) { currentRoom = room; abrirCheckout(); }
+
+        // ============================
+        // CHECKOUT + STRIPE
+        // ============================
+        function abrirCheckout() {
+            if (!currentUser) { closeAuth(); openAuth(); toast('Inicia sesión para reservar', 'error'); return; }
+            const dateIn = document.getElementById('f-date-in').value;
+            const dateOut = document.getElementById('f-date-out').value;
+            let nights = 0;
+            if (dateIn && dateOut) { nights = Math.ceil(Math.abs(new Date(dateOut) - new Date(dateIn)) / (1000*60*60*24)); }
+            const price = currentRoom ? currentRoom.price : (currentProperty.minPrice || 85);
+            document.getElementById('chk-property-name').textContent = currentProperty.name;
+            document.getElementById('chk-dates').textContent = dateIn && dateOut ? `${dateIn} → ${dateOut}` : 'Sin seleccionar';
+            document.getElementById('chk-nights').textContent = nights > 0 ? nights : '-';
+            document.getElementById('chk-room').textContent = currentRoom ? currentRoom.name : 'General';
+            document.getElementById('chk-price-night').textContent = price + '€';
+            document.getElementById('chk-total').textContent = (nights > 0 ? nights * price : price) + '€';
+            document.getElementById('chk-name').value = currentUser.profile.name || '';
+            document.getElementById('chk-email').value = currentUser.email || '';
+            document.getElementById('chk-phone').value = currentUser.profile.phone || '';
+            document.getElementById('chk-step-1').style.display = 'block';
+            document.getElementById('chk-step-2').style.display = 'none';
+            document.getElementById('modal-checkout').style.display = 'flex';
+        }
+        function closeCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
+
+        async function procesarPago() {
+            if (!currentUser) { toast('Inicia sesión primero', 'error'); return; }
+            const dateIn = document.getElementById('f-date-in').value;
+            const dateOut = document.getElementById('f-date-out').value;
+            if (!dateIn || !dateOut) { toast('Selecciona fechas', 'error'); return; }
+            const nights = Math.ceil(Math.abs(new Date(dateOut) - new Date(dateIn)) / (1000*60*60*24));
+            const price = currentRoom ? currentRoom.price : (currentProperty.minPrice || 85);
+            const total = nights * price;
+
+            const btn = document.getElementById('pay-btn');
+            btn.disabled = true;
+            btn.textContent = 'Procesando...';
+
+            try {
+                // In production: call Firebase Function to create Stripe Checkout Session
+                // For now: create booking directly and simulate payment
+                const bookingData = {
+                    propertyId: currentProperty.id,
+                    roomId: currentRoom ? currentRoom.id : null,
+                    userId: currentUser.uid,
+                    providerId: currentProperty.providerId,
+                    guestName: document.getElementById('chk-name').value,
+                    guestEmail: document.getElementById('chk-email').value,
+                    guestPhone: document.getElementById('chk-phone').value,
+                    message: document.getElementById('chk-message').value,
+                    checkIn: dateIn, checkOut: dateOut, nights,
+                    totalPrice: total, pricePerNight: price,
+                    status: 'pendiente',
+                    paymentStatus: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('bookings').add(bookingData);
+
+                document.getElementById('chk-step-1').style.display = 'none';
+                document.getElementById('chk-step-2').style.display = 'block';
+                toast('¡Reserva creada con éxito!', 'success');
+            } catch(err) {
+                toast('Error al procesar: ' + err.message, 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Pagar ahora';
+        }
+
+        function cerrarTodo() { closeCheckout(); closeModal(); navigate('home'); }
+
+        // ============================
+        // USER PROFILE
+        // ============================
+        function openProfile() {
+            document.getElementById('user-dropdown').classList.remove('show');
+            document.getElementById('profile-name').value = currentUser.profile.name || '';
+            document.getElementById('profile-email').value = currentUser.email || '';
+            document.getElementById('profile-phone').value = currentUser.profile.phone || '';
+            loadMyBookings();
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+        function closeProfile() { document.getElementById('modal-profile').style.display = 'none'; }
+
+        async function loadMyBookings() {
+            const list = document.getElementById('my-bookings-list');
+            list.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
+            try {
+                const snap = await db.collection('bookings').where('userId', '==', currentUser.uid).orderBy('createdAt', 'desc').get();
+                const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (bookings.length === 0) { list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Aún no tienes reservas</p></div>'; return; }
+                list.innerHTML = bookings.map(b => {
+                    const prop = allProperties.find(p => p.id === b.propertyId);
+                    return `<div class="booking-card">
+                        <div class="booking-info"><h4>${prop ? prop.name : 'Propiedad'}</h4><p>📅 ${b.checkIn} → ${b.checkOut} · ${b.nights} noches · ${b.totalPrice}€</p></div>
+                        <span class="booking-status ${b.status}">${b.status}</span>
+                        ${b.status === 'pendiente' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking('${b.id}')">Cancelar</button>` : ''}
+                    </div>`;
+                }).join('');
+            } catch(err) { list.innerHTML = '<div class="empty-state"><p>Error cargando reservas</p></div>'; }
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('¿Seguro que quieres cancelar esta reserva?')) return;
+            await db.collection('bookings').doc(id).update({ status: 'cancelada' });
+            toast('Reserva cancelada', 'success');
+            loadMyBookings();
+        }
+
+        async function updateProfile() {
+            const name = document.getElementById('profile-name').value;
+            const phone = document.getElementById('profile-phone').value;
+            await db.collection('users').doc(currentUser.uid).update({ name, phone });
+            currentUser.profile.name = name;
+            currentUser.profile.phone = phone;
+            updateUI();
+            toast('Perfil actualizado', 'success');
+        }
+
+        function switchProfileTab(tab, el) {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.profile-panel').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('panel-' + tab).classList.add('active');
+        }
+
+        // ============================
+        // PROVIDER REGISTRATION
+        // ============================
+        let regType = '';
+        let regStep = 0;
+
+        function openProviderReg() {
+            if (!currentUser) { openAuth(); toast('Inicia sesión primero', 'error'); return; }
+            document.getElementById('modal-provider-reg').style.display = 'flex';
+            regStep = 0; regType = '';
+            updateRegUI();
+        }
+        function closeProviderReg() { document.getElementById('modal-provider-reg').style.display = 'none'; }
+
+        function selectRegType(type, el) {
+            regType = type;
+            document.querySelectorAll('.reg-type-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function updateRegUI() {
+            document.querySelectorAll('.reg-step').forEach((s, i) => s.classList.toggle('active', i === regStep));
+            document.getElementById('reg-progress').innerHTML = [0,1,2,3].map(i => `<div class="reg-progress-step ${i < regStep ? 'done' : i === regStep ? 'current' : ''}"></div>`).join('');
+            if (regStep === 2) renderRegDynamicFields();
+        }
+
+        function regNext() {
+            if (regStep === 0 && !regType) { toast('Selecciona un tipo de negocio', 'error'); return; }
+            regStep++;
+            updateRegUI();
+        }
+        function regBack() { if (regStep > 0) { regStep--; updateRegUI(); } }
+
+        function renderRegDynamicFields() {
+            const container = document.getElementById('reg-dynamic-fields');
+            const fields = {
+                alojamiento: `<div class="form-row"><div class="form-group"><label>Nº de habitaciones</label><input type="number" id="reg-rooms" class="form-control" placeholder="Ej. 5"></div><div class="form-group"><label>Precio desde (€/noche)</label><input type="number" id="reg-price" class="form-control" placeholder="Ej. 85"></div></div><div class="form-group"><label>Servicios</label><div class="tag-sel" id="reg-amenities"></div></div>`,
+                restaurante: `<div class="form-row"><div class="form-group"><label>Capacidad (comensales)</label><input type="number" id="reg-capacity" class="form-control" placeholder="Ej. 40"></div><div class="form-group"><label>Precio medio (€)</label><input type="number" id="reg-price" class="form-control" placeholder="Ej. 25"></div></div><div class="form-group"><label>Tipo de cocina</label><input type="text" id="reg-cuisine" class="form-control" placeholder="Ej. Tradicional, fusión..."></div>`,
+                bodega: `<div class="form-group"><label>Tipo de productos</label><input type="text" id="reg-products" class="form-control" placeholder="Ej. Vinos, quesos, aceites"></div><div class="form-group"><label>Precio cata desde (€)</label><input type="number" id="reg-price" class="form-control" placeholder="Ej. 15"></div><div class="form-group"><label>Horario de visitas</label><input type="text" id="reg-hours" class="form-control" placeholder="Ej. L-V 10:00-18:00"></div>`,
+                hipica: `<div class="form-row"><div class="form-group"><label>Actividades</label><input type="text" id="reg-activities" class="form-control" placeholder="Ej. Clases, rutas"></div><div class="form-group"><label>Precio desde (€)</label><input type="number" id="reg-price" class="form-control" placeholder="Ej. 30"></div></div><div class="form-group"><label>Nivel</label><input type="text" id="reg-level" class="form-control" placeholder="Ej. Principiante a avanzado"></div>`
+            };
+            container.innerHTML = fields[regType] || '';
+            if (regType === 'alojamiento') {
+                document.getElementById('reg-amenities').innerHTML = ["Wifi","Parking","Piscina","Desayuno","Jardín","Calefacción","Chimenea","Jacuzzi"].map(a => `<button class="tag-btn" onclick="this.classList.toggle('active')">${a}</button>`).join('');
+            }
+        }
+
+        async function submitProviderReg() {
+            const name = document.getElementById('reg-biz-name').value;
+            const loc = document.getElementById('reg-biz-loc').value;
+            const phone = document.getElementById('reg-biz-phone').value;
+            const desc = document.getElementById('reg-biz-desc').value;
+            if (!name || !loc) { toast('Completa nombre y ubicación', 'error'); return; }
+
+            try {
+                await db.collection('providers').add({
+                    ownerId: currentUser.uid, type: regType, name, location: loc, phone, description: desc,
+                    status: 'pending', rating: 0, totalReviews: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                regStep = 3;
+                updateRegUI();
+                toast('¡Solicitud enviada!', 'success');
+            } catch(err) { toast('Error: ' + err.message, 'error'); }
+        }
+
+        // ============================
+        // EXTRANET
+        // ============================
+        async function loadExtranet() {
+            if (!currentProvider) { toast('No tienes un negocio registrado', 'error'); navigate('home'); return; }
+            const data = currentProvider.data();
+            document.getElementById('ex-biz-name').textContent = data.name;
+            document.getElementById('ex-greeting').textContent = `Buenos días, ${currentUser.profile.name} 👋`;
+            document.getElementById('ex-edit-name').value = data.name;
+            document.getElementById('ex-edit-loc').value = data.location;
+            document.getElementById('ex-edit-desc').value = data.description;
+            loadExBookings();
+            loadExCalendario();
+            loadExServicios();
+            loadExKPIs();
+        }
+
+        function showExPanel(id, el) {
+            document.querySelectorAll('.ex-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (el) el.classList.add('active');
+        }
+
+        async function loadExBookings() {
+            const tbody = document.getElementById('ex-reservas-body');
+            if (!tbody) return;
+            try {
+                const snap = await db.collection('bookings').where('providerId', '==', currentProvider.id).orderBy('createdAt', 'desc').get();
+                const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                tbody.innerHTML = bookings.length > 0 ? bookings.map(b => `<tr>
+                    <td><strong>${b.guestName || 'Anónimo'}</strong><br><small style="color:var(--text-muted);">${b.guestEmail || ''}</small></td>
+                    <td>${b.checkIn} → ${b.checkOut}</td>
+                    <td>${currentProvider.data().name}</td>
+                    <td style="font-weight:600;">${b.totalPrice}€</td>
+                    <td><span class="status-badge ${b.status}">${b.status}</span></td>
+                    <td>${b.status === 'pendiente' ? `<button class="btn btn-sm" onclick="confirmBooking('${b.id}')">Confirmar</button><button class="btn btn-sm btn-danger" onclick="rejectBooking('${b.id}')" style="margin-left:4px;">Rechazar</button>` : '-'}</td>
+                </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Sin reservas aún</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;">Error cargando</td></tr>'; }
+        }
+
+        async function confirmBooking(id) { await db.collection('bookings').doc(id).update({ status: 'confirmada' }); toast('Reserva confirmada', 'success'); loadExBookings(); loadExKPIs(); }
+        async function rejectBooking(id) { await db.collection('bookings').doc(id).update({ status: 'cancelada' }); toast('Reserva rechazada', 'success'); loadExBookings(); }
+
+        async function loadExKPIs() {
+            try {
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const snap = await db.collection('bookings').where('providerId', '==', currentProvider.id).get();
+                const bookings = snap.docs.map(d => d.data());
+                const active = bookings.filter(b => b.status === 'confirmada' || b.status === 'pendiente');
+                const revenue = active.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+                document.getElementById('kpi-bookings').textContent = active.length;
+                document.getElementById('kpi-revenue').textContent = revenue + '€';
+                document.getElementById('kpi-occupancy').textContent = bookings.length > 0 ? Math.round((active.length / Math.max(bookings.length, 1)) * 100) + '%' : '0%';
+                if (currentProvider.data().rating > 0) document.getElementById('kpi-rating').textContent = '⭐ ' + currentProvider.data().rating;
+            } catch(e) {}
+
+            // Occ chart
+            const chart = document.getElementById('occ-chart');
+            if (!chart) return;
+            const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const occData = [45,52,68,72,78,85,92,88,75,60,55,50];
+            chart.innerHTML = occData.map((v, i) => `<div class="occ-bar-wrap"><div class="occ-bar" style="height:${v}%;background:${v > 75 ? 'var(--verde)' : v > 55 ? 'var(--ocre)' : 'var(--text-muted)'};"></div><div class="occ-label">${months[i]}</div></div>`).join('');
+        }
+
+        function loadExCalendario() {
+            const el = document.getElementById('admin-calendario');
+            if (!el) return;
+            let html = '<div class="pms-grid"><div class="pms-header" style="background:transparent;border-right:1px solid var(--border);"></div>';
+            const today = new Date();
+            for (let i = 0; i < 7; i++) { const d = new Date(today); d.setDate(today.getDate() + i); html += `<div class="pms-header">${d.toLocaleDateString('es-ES', {weekday:'short'})}<br><span style="font-size:1.1rem;color:var(--text);">${d.getDate()}</span></div>`; }
+            html += '<div class="pms-room-name">General</div>';
+            for (let i = 0; i < 7; i++) { const r = Math.random(); html += `<div class="pms-cell">${r > 0.7 ? '<div class="pms-book">Reserva</div>' : ''}</div>`; }
+            html += '</div>';
+            el.innerHTML = html;
+        }
+
+        async function loadExServicios() {
+            const grid = document.getElementById('ex-servicios-grid');
+            if (!grid || !currentProvider) return;
+            try {
+                const snap = await db.collection('services').where('providerId', '==', currentProvider.id).get();
+                const services = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (services.length === 0) { grid.innerHTML = '<div class="empty-state"><div class="icon">🛠️</div><p>Añade tu primer servicio</p></div>'; return; }
+                grid.innerHTML = services.map(s => `<div class="serv-card"><div class="serv-icon">${s.icon || '🛠️'}</div><div class="serv-name">${s.name}</div><div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">${s.description || ''}</div><div class="serv-price">${s.price || ''}€</div><div class="serv-toggle"><div class="toggle-switch ${s.active ? 'active' : ''}" onclick="toggleService('${s.id}',this)"></div><span style="color:var(--text-muted);">${s.active ? 'Activo' : 'Oculto'}</span></div></div>`).join('');
+            } catch(e) {}
+        }
+
+        async function addProviderService() {
+            const name = prompt('Nombre del servicio:');
+            if (!name) return;
+            const price = prompt('Precio (€):') || '0';
+            await db.collection('services').add({ providerId: currentProvider.id, name, price: parseFloat(price), active: true, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            toast('Servicio añadido', 'success');
+            loadExServicios();
+        }
+
+        async function toggleService(id, el) {
+            const doc = await db.collection('services').doc(id).get();
+            await db.collection('services').doc(id).update({ active: !doc.data().active });
+            el.classList.toggle('active');
+            loadExServicios();
+        }
+
+        async function saveProviderData() {
+            await db.collection('providers').doc(currentProvider.id).update({
+                name: document.getElementById('ex-edit-name').value,
+                location: document.getElementById('ex-edit-loc').value,
+                description: document.getElementById('ex-edit-desc').value
+            });
+            toast('Datos guardados', 'success');
+            loadExtranet();
+        }
+
+        // ============================
+        // CONCIERGE WIZARD
+        // ============================
+        const wizProfiles = {
+            0: { who: null, steps: ['duration', 'budget', 'environment', 'rhythm', 'interests'] },
+            1: { who: null, steps: ['duration', 'environment', 'activities'] },
+            2: { who: 'Pareja', steps: ['duration', 'budget', 'environment', 'romantic'] },
+            3: { who: 'Grupo', steps: ['duration', 'budget', 'environment', 'group'] },
+            4: { who: 'Solo', steps: ['duration', 'needs', 'environment'] },
+            5: { who: 'Pareja', steps: ['duration', 'budget', 'environment', 'premium'] },
+            6: { who: 'Familia', steps: ['kids', 'environment', 'family'] },
+            7: { who: null, steps: ['duration', 'environment', 'foodie'] }
+        };
+        let wizEmotion = -1, wizSteps = [], wizData = {}, wizCurrentStep = 0;
+
+        const stepTemplates = {
+            who: { icon: '👥', title: '¿Quién viaja?', multi: false, key: 'who', options: [{icon:'💑',title:'Pareja',desc:'Escapada en dos'},{icon:'👨‍👩‍👧‍👦',title:'Familia',desc:'Con niños'},{icon:'🎉',title:'Grupo',desc:'Con amigos'},{icon:'🐕',title:'Con mascota'}] },
+            duration: { icon: '📅', title: '¿Cuánto tiempo?', multi: false, key: 'duration', options: [{icon:'⚡',title:'Exprés',desc:'1-2 noches'},{icon:'🌙',title:'Fin de semana',desc:'2-3 noches'},{icon:'🗓️',title:'Semana',desc:'5-7 noches'},{icon:'🤔',title:'Flexible'}] },
+            budget: { icon: '💰', title: '¿Presupuesto/noche?', multi: false, key: 'budget', options: [{icon:'🌱',title:'Económico',desc:'Hasta 60€'},{icon:'🌿',title:'Medio',desc:'60-100€'},{icon:'🌳',title:'Confort',desc:'100-150€'},{icon:'💎',title:'Premium',desc:'+150€'}] },
+            environment: { icon: '🏞️', title: '¿Qué paisaje?', multi: false, key: 'environment', options: [{icon:'🏔️',title:'Montaña'},{icon:'🌊',title:'Valle con río'},{icon:'🏘️',title:'Pueblo'},{icon:'🌾',title:'Campo'}] },
+            rhythm: { icon: '⚡', title: '¿A qué ritmo?', multi: false, key: 'rhythm', options: [{icon:'🧘',title:'Modo zen'},{icon:'🚶',title:'Paseos suaves'},{icon:'🥾',title:'Activo'},{icon:'🎯',title:'Mix'}] },
+            interests: { icon: '🧀', title: '¿Qué te apetece?', sub: 'Selecciona todo lo que quieras', multi: true, key: 'interests', options: [{icon:'🍷',title:'Catas'},{icon:'🥩',title:'Gastronomía'},{icon:'🎭',title:'Cultura'},{icon:'📸',title:'Naturaleza'},{icon:'💆',title:'Spa'},{icon:'🏺',title:'Artesanía'}] },
+            kids: { icon: '🧒', title: '¿Edades de los peques?', multi: false, key: 'kids', options: [{icon:'👶',title:'Bebés (0-2)'},{icon:'🧒',title:'Niños (3-10)'},{icon:'🧑',title:'Adolescentes'},{icon:'👪',title:'Mezcla'}] },
+            romantic: { icon: '🌹', title: '¿Plan romántico?', multi: true, key: 'romantic', options: [{icon:'🍷',title:'Cata de vinos'},{icon:'🌅',title:'Atardecer'},{icon:'💆',title:'Spa'},{icon:'🥂',title:'Cena'},{icon:'🔥',title:'Chimenea'}] },
+            group: { icon: '🎉', title: '¿Qué hacéis juntos?', multi: true, key: 'group', options: [{icon:'🍖',title:'Barbacoa'},{icon:'🥾',title:'Ruta'},{icon:'🍷',title:'Cata'},{icon:'🏊',title:'Piscina/Río'}] },
+            needs: { icon: '💻', title: '¿Qué necesitas?', multi: true, key: 'needs', options: [{icon:'📶',title:'Wifi potente'},{icon:'🖥️',title:'Espacio trabajo'},{icon:'🤫',title:'Silencio'},{icon:'🌲',title:'Vistas'}] },
+            premium: { icon: '✨', title: '¿Experiencia exclusiva?', multi: true, key: 'premium', options: [{icon:'🏊',title:'Piscina privada'},{icon:'🧖',title:'Jacuzzi'},{icon:'👨‍🍳',title:'Chef'},{icon:'🍷',title:'Cata privada'}] },
+            family: { icon: '🎯', title: '¿Actividades familia?', multi: true, key: 'family', options: [{icon:'🐄',title:'Granja'},{icon:'🏊',title:'Piscina'},{icon:'🥾',title:'Senderismo'},{icon:'🧺',title:'Picnic'}] },
+            foodie: { icon: '🍽️', title: '¿Experiencia gastronómica?', multi: true, key: 'foodie', options: [{icon:'🍷',title:'Bodegas'},{icon:'🧀',title:'Quesos'},{icon:'🫒',title:'Aceite'},{icon:'🥩',title:'Asado'}] },
+            activities: { icon: '🥾', title: '¿Qué aventura?', multi: true, key: 'activities', options: [{icon:'🚵',title:'BTT'},{icon:'🛶',title:'Kayak'},{icon:'🥾',title:'Senderismo'},{icon:'🌙',title:'Estrellas'}] }
+        };
+
+        function renderWizStep(idx) {
+            if (idx >= wizSteps.length) { wizFinish(); return; }
+            const t = stepTemplates[wizSteps[idx]];
+            if (!t) { wizNext(); return; }
+            let optHtml = t.options.map(o => `<div class="wiz-option" onclick="wizPick(this,'${t.key}',${t.multi})"><span class="wiz-option-icon">${o.icon}</span><div class="wiz-option-text"><div class="wiz-option-title">${o.title}</div>${o.desc ? `<div class="wiz-option-desc">${o.desc}</div>` : ''}</div></div>`).join('');
+            document.getElementById('wiz-dynamic-content').innerHTML = `
+                <div class="wiz-step-title">${t.icon} ${t.title}</div>
+                ${t.sub ? `<div class="wiz-step-sub">${t.sub}</div>` : ''}
+                <div class="wiz-options ${t.multi ? 'wiz-multi' : ''}">${optHtml}</div>
+                <div class="wiz-nav">${wizCurrentStep > 0 ? '<button class="btn btn-outline" onclick="wizBack()">← Atrás</button>' : '<div></div>'}<button class="btn" onclick="wizNext()">${wizCurrentStep === wizSteps.length - 1 ? '🔍 Buscar' : 'Siguiente →'}</button></div>`;
+            document.getElementById('wiz-progress-bar').innerHTML = wizSteps.map((s, i) => `<div class="wiz-progress-step ${i < wizCurrentStep ? 'done' : i === wizCurrentStep ? 'current' : ''}"></div>`).join('');
+        }
+
+        function wizPick(el, key, multi) {
+            if (multi) {
+                el.classList.toggle('selected');
+                if (!wizData[key]) wizData[key] = [];
+                const title = el.querySelector('.wiz-option-title').textContent.trim();
+                if (el.classList.contains('selected')) { if (!wizData[key].includes(title)) wizData[key].push(title); } else { wizData[key] = wizData[key].filter(t => t !== title); }
+            } else {
+                el.parentElement.querySelectorAll('.wiz-option').forEach(o => o.classList.remove('selected'));
+                el.classList.add('selected');
+                wizData[key] = el.querySelector('.wiz-option-title').textContent.trim();
+            }
+        }
+        function wizNext() { wizCurrentStep++; if (wizCurrentStep >= wizSteps.length) { wizFinish(); return; } renderWizStep(wizCurrentStep); }
+        function wizBack() { if (wizCurrentStep > 0) { wizCurrentStep--; renderWizStep(wizCurrentStep); } }
+
+        function wizFinish() {
+            const msgs = ["Buscando alojamientos...","Conectando con locales...","Preparando experiencia...","¡Listo! ✨"];
+            const content = document.getElementById('wiz-dynamic-content');
+            content.innerHTML = `<div style="text-align:center;padding:40px 0;"><div style="margin:0 auto 24px;width:48px;height:48px;border:3px solid var(--verde-l);border-top-color:var(--verde);border-radius:50%;animation:spin 1s linear infinite;"></div><div class="wiz-step-title" style="margin-bottom:6px;">Buscando tu rincón ideal</div><p id="wiz-loading-text" style="color:var(--text-muted);font-size:1rem;"></p></div>`;
+            document.getElementById('wiz-progress-bar').innerHTML = wizSteps.map(() => '<div class="wiz-progress-step done"></div>').join('');
+            const textEl = document.getElementById('wiz-loading-text');
+            textEl.textContent = msgs[0];
+            let i = 0;
+            const interval = setInterval(() => { i++; if (i < msgs.length) textEl.textContent = msgs[i]; else { clearInterval(interval); document.getElementById('modal-wizard').style.display = 'none'; document.getElementById('public-grid').scrollIntoView({ behavior: 'smooth' }); } }, 700);
+        }
+
+        function buscarPorEmocion() {
+            if (activeEmotionIdx === -1) { toast('Elige un estilo de escapada', 'error'); return; }
+            wizEmotion = activeEmotionIdx; wizCurrentStep = 0; wizData = {};
+            const profile = wizProfiles[wizEmotion];
+            if (!profile) return;
+            if (profile.who) wizData.who = profile.who;
+            wizSteps = profile.steps;
+            document.getElementById('modal-wizard').style.display = 'flex';
+            renderWizStep(0);
+        }
+
+        // ============================
+        // INIT
+        // ============================
+        renderEmotions();
+        initHeroSlider();
+        loadProperties();
+    </script>
+</body>
+</html>
