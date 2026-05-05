@@ -939,33 +939,24 @@
         // ============================
         async function loadProperties() {
             const grid = document.getElementById('public-grid');
-            grid.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
             
-            // Offline mode: use mock data immediately
-            if (!firebaseReady) {
-                console.log("Firebase offline, using mock data");
-                allProperties = [...MOCK_PROPERTIES];
-                renderProperties(allProperties);
-                if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[4/4] Properties: ' + allProperties.length + ' (mock)';
-                return;
-            }
+            // ALWAYS show mock data first (instant render)
+            allProperties = [...MOCK_PROPERTIES];
+            renderProperties(allProperties);
+            if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[4/4] Properties: ' + allProperties.length + ' (mock shown)';
             
-            // Online mode: try Firestore with timeout
+            // Then try to replace with Firestore data if available
+            if (!firebaseReady) return;
             try {
-                const timeout = new Promise(function(_, reject) { setTimeout(function() { reject(new Error('Firestore timeout')); }, 5000); });
-                const query = db.collection('properties').where('status', '==', 'approved').get();
-                const snap = await Promise.race([query, timeout]);
-                allProperties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if (allProperties.length === 0) {
-                    allProperties = [...MOCK_PROPERTIES];
+                var snap = await db.collection('properties').where('status', '==', 'approved').get();
+                var realProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (realProps.length > 0) {
+                    allProperties = realProps;
+                    renderProperties(allProperties);
+                    if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += ' -> ' + allProperties.length + ' (real)';
                 }
-                renderProperties(allProperties);
-                if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[4/4] Properties: ' + allProperties.length;
             } catch(err) {
-                console.error("Error cargando propiedades:", err);
-                allProperties = [...MOCK_PROPERTIES];
-                renderProperties(allProperties);
-                if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[4/4] Properties: ' + allProperties.length + ' (fallback)';
+                console.log("Using mock data (Firestore error):", err.message);
             }
         }
 
@@ -1544,24 +1535,11 @@
         }
         renderEmotions();
         initHeroSlider();
-        
-        if (!firebaseReady) {
-            // Offline: use mock data immediately, no async
-            allProperties = [...MOCK_PROPERTIES];
-            renderProperties(allProperties);
+        loadProperties().then(function() {
             if (_dbg) {
-                _dbg.innerHTML += '<br>[4/4] Properties: ' + allProperties.length + ' (mock)';
                 setTimeout(function() { _dbg.style.transition = 'opacity 2s'; _dbg.style.opacity = '0'; setTimeout(function() { _dbg.remove(); }, 2000); }, 5000);
             }
-        } else {
-            // Online: try Firestore
-            loadProperties().then(function() {
-                if (_dbg) {
-                    _dbg.innerHTML += '<br>[4/4] Properties: ' + allProperties.length;
-                    setTimeout(function() { _dbg.style.transition = 'opacity 2s'; _dbg.style.opacity = '0'; setTimeout(function() { _dbg.remove(); }, 2000); }, 5000);
-                }
-            });
-        }
+        });
     </script>
 </body>
 </html>
