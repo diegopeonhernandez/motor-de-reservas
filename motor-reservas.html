@@ -923,7 +923,7 @@
             { icon: "🎉", title: "Grupos", desc: "Fiesta y risas" },
             { icon: "💻", title: "Workcation", desc: "Teletrabajo rural" },
             { icon: "✨", title: "Premium", desc: "Lujo rural" },
-            { icon: "👨‍👩‍👧", title: "Familiar", desc: "Para toda la familia" },
+            { icon: "👨👩👧", title: "Familiar", desc: "Para toda la familia" },
             { icon: "🍽️", title: "Foodie", desc: "Gastronomía local" }
         ];
         function renderEmotions() {
@@ -1469,7 +1469,7 @@
         let wizEmotion = -1, wizSteps = [], wizData = {}, wizCurrentStep = 0;
 
         const stepTemplates = {
-            who: { icon: '👥', title: '¿Quién viaja?', multi: false, key: 'who', options: [{icon:'💑',title:'Pareja',desc:'Escapada en dos'},{icon:'👨‍👩‍👧‍👦',title:'Familia',desc:'Con niños'},{icon:'🎉',title:'Grupo',desc:'Con amigos'},{icon:'🐕',title:'Con mascota'}] },
+            who: { icon: '👥', title: '¿Quién viaja?', multi: false, key: 'who', options: [{icon:'💑',title:'Pareja',desc:'Escapada en dos'},{icon:'👨👩👧👦',title:'Familia',desc:'Con niños'},{icon:'🎉',title:'Grupo',desc:'Con amigos'},{icon:'🐕',title:'Con mascota'}] },
             duration: { icon: '📅', title: '¿Cuánto tiempo?', multi: false, key: 'duration', options: [{icon:'⚡',title:'Exprés',desc:'1-2 noches'},{icon:'🌙',title:'Fin de semana',desc:'2-3 noches'},{icon:'🗓️',title:'Semana',desc:'5-7 noches'},{icon:'🤔',title:'Flexible'}] },
             budget: { icon: '💰', title: '¿Presupuesto/noche?', multi: false, key: 'budget', options: [{icon:'🌱',title:'Económico',desc:'Hasta 60€'},{icon:'🌿',title:'Medio',desc:'60-100€'},{icon:'🌳',title:'Confort',desc:'100-150€'},{icon:'💎',title:'Premium',desc:'+150€'}] },
             environment: { icon: '🏞️', title: '¿Qué paisaje?', multi: false, key: 'environment', options: [{icon:'🏔️',title:'Montaña'},{icon:'🌊',title:'Valle con río'},{icon:'🏘️',title:'Pueblo'},{icon:'🌾',title:'Campo'}] },
@@ -1479,7 +1479,7 @@
             romantic: { icon: '🌹', title: '¿Plan romántico?', multi: true, key: 'romantic', options: [{icon:'🍷',title:'Cata de vinos'},{icon:'🌅',title:'Atardecer'},{icon:'💆',title:'Spa'},{icon:'🥂',title:'Cena'},{icon:'🔥',title:'Chimenea'}] },
             group: { icon: '🎉', title: '¿Qué hacéis juntos?', multi: true, key: 'group', options: [{icon:'🍖',title:'Barbacoa'},{icon:'🥾',title:'Ruta'},{icon:'🍷',title:'Cata'},{icon:'🏊',title:'Piscina/Río'}] },
             needs: { icon: '💻', title: '¿Qué necesitas?', multi: true, key: 'needs', options: [{icon:'📶',title:'Wifi potente'},{icon:'🖥️',title:'Espacio trabajo'},{icon:'🤫',title:'Silencio'},{icon:'🌲',title:'Vistas'}] },
-            premium: { icon: '✨', title: '¿Experiencia exclusiva?', multi: true, key: 'premium', options: [{icon:'🏊',title:'Piscina privada'},{icon:'🧖',title:'Jacuzzi'},{icon:'👨‍🍳',title:'Chef'},{icon:'🍷',title:'Cata privada'}] },
+            premium: { icon: '✨', title: '¿Experiencia exclusiva?', multi: true, key: 'premium', options: [{icon:'🏊',title:'Piscina privada'},{icon:'🧖',title:'Jacuzzi'},{icon:'👨🍳',title:'Chef'},{icon:'🍷',title:'Cata privada'}] },
             family: { icon: '🎯', title: '¿Actividades familia?', multi: true, key: 'family', options: [{icon:'🐄',title:'Granja'},{icon:'🏊',title:'Piscina'},{icon:'🥾',title:'Senderismo'},{icon:'🧺',title:'Picnic'}] },
             foodie: { icon: '🍽️', title: '¿Experiencia gastronómica?', multi: true, key: 'foodie', options: [{icon:'🍷',title:'Bodegas'},{icon:'🧀',title:'Quesos'},{icon:'🫒',title:'Aceite'},{icon:'🥩',title:'Asado'}] },
             activities: { icon: '🥾', title: '¿Qué aventura?', multi: true, key: 'activities', options: [{icon:'🚵',title:'BTT'},{icon:'🛶',title:'Kayak'},{icon:'🥾',title:'Senderismo'},{icon:'🌙',title:'Estrellas'}] }
