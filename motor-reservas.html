@@ -143,6 +143,9 @@
         .review-date { font-size: 0.8rem; color: var(--text-muted); }
         .review-stars { color: var(--ocre); margin-bottom: 6px; }
         .review-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+        .star-btn { font-size: 1.8rem; background: none; border: none; cursor: pointer; color: var(--text-muted); transition: transform 0.15s; }
+        .star-btn:hover { transform: scale(1.2); }
+        .star-btn.active { color: var(--ocre); }
 
         /* CHECKOUT MODAL */
         .checkout-overlay { background: rgba(20,16,10,0.8); backdrop-filter: blur(6px); z-index: 2000; display: none; align-items: flex-start; justify-content: center; position: fixed; inset: 0; padding: 40px 20px; overflow-y: auto; }
@@ -448,6 +451,19 @@
                     <div class="review-section">
                         <h2 style="margin-bottom:16px;">Valoraciones</h2>
                         <div id="f-reviews"></div>
+                        <div id="review-form-wrap" style="margin-top:24px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);">
+                            <h3 style="margin-bottom:12px;font-size:1rem;">Deja tu valoración</h3>
+                            <div style="display:flex;gap:8px;margin-bottom:12px;" id="star-picker">
+                                <button type="button" onclick="selectRating(1)" data-rating="1" class="star-btn">☆</button>
+                                <button type="button" onclick="selectRating(2)" data-rating="2" class="star-btn">☆</button>
+                                <button type="button" onclick="selectRating(3)" data-rating="3" class="star-btn">☆</button>
+                                <button type="button" onclick="selectRating(4)" data-rating="4" class="star-btn">☆</button>
+                                <button type="button" onclick="selectRating(5)" data-rating="5" class="star-btn">☆</button>
+                                <span id="rating-label" style="margin-left:8px;font-size:0.85rem;color:var(--text-muted);align-self:center;"></span>
+                            </div>
+                            <textarea id="review-text" class="form-control" rows="3" placeholder="Cuéntanos tu experiencia..." style="margin-bottom:10px;"></textarea>
+                            <button class="btn btn-sm" onclick="submitReview()">Enviar valoración</button>
+                        </div>
                     </div>
                     <h2 style="margin:30px 0 16px;">Disponibilidad</h2>
                     <table class="room-table"><thead><tr><th>Tipo</th><th>Capacidad</th><th>Precio/noche</th><th>Acción</th></tr></thead><tbody id="f-rooms"></tbody></table>
@@ -604,7 +620,7 @@
                 <div id="ex-calendario" class="ex-panel"><div class="panel-card"><h2 class="panel-title">Calendario de Disponibilidad</h2><div id="admin-calendario"></div></div></div>
                 <div id="ex-servicios" class="ex-panel"><div class="panel-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 class="panel-title" style="margin-bottom:0;border:none;padding:0;">Servicios</h2><button class="btn btn-sm" onclick="addProviderService()">+ Añadir</button></div><div class="serv-grid" id="ex-servicios-grid"></div></div></div>
                 <div id="ex-alojamiento" class="ex-panel"><div class="panel-card"><h2 class="panel-title">Datos del Negocio</h2><div class="form-group"><label>Nombre</label><input type="text" id="ex-edit-name" class="form-control"></div><div class="form-group"><label>Ubicación</label><input type="text" id="ex-edit-loc" class="form-control"></div><div class="form-group"><label>Descripción</label><textarea id="ex-edit-desc" class="form-control" rows="4"></textarea></div><button class="btn" onclick="saveProviderData()">Guardar</button></div></div>
-                <div id="ex-mensajes" class="ex-panel"><div class="panel-card" style="padding:0;"><div class="chat-layout"><div class="chat-list" id="ex-chat-list"></div><div class="chat-main"><div class="chat-header"><div style="display:flex;align-items:center;gap:10px;"><div class="chat-avatar" id="ex-chat-avatar">?</div><div><div class="chat-name" id="ex-chat-name">Selecciona un chat</div></div></div></div><div class="chat-messages" id="ex-chat-messages"><div class="empty-state"><div class="icon">💬</div><p>Selecciona una conversación</p></div></div><div class="chat-input"><input type="text" id="ex-chat-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Extranet')sendExMessage()"><button class="btn btn-sm" onclick="sendExMessage()">Enviar</button></div></div></div></div></div>
+                <div id="ex-mensajes" class="ex-panel"><div class="panel-card" style="padding:0;"><div class="chat-layout"><div class="chat-list" id="ex-chat-list"></div><div class="chat-main"><div class="chat-header"><div style="display:flex;align-items:center;gap:10px;"><div class="chat-avatar" id="ex-chat-avatar">?</div><div><div class="chat-name" id="ex-chat-name">Selecciona un chat</div></div></div></div><div class="chat-messages" id="ex-chat-messages"><div class="empty-state"><div class="icon">💬</div><p>Selecciona una conversación</p></div></div><div class="chat-input"><input type="text" id="ex-chat-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendExMessage()"><button class="btn btn-sm" onclick="sendExMessage()">Enviar</button></div></div></div></div></div>
             </div>
         </div>
     </div>
@@ -624,10 +640,13 @@
         // FIREBASE CONFIG
         // ============================
         const firebaseConfig = {
-            apiKey: "AIzaSyCHow523fM8oLbs75NjhKkf4_tSl3qVJEo",
+            apiKey: "AIzaSyCHow523fM8oLbs75NjhKkF4_tSl3qVJEo",
             authDomain: "erase-una-vez-1509b.firebaseapp.com",
             projectId: "erase-una-vez-1509b",
-            appId: "1:123456789:web:abcdef"
+            storageBucket: "erase-una-vez-1509b.firebasestorage.app",
+            messagingSenderId: "834654642688",
+            appId: "1:834654642688:web:5e67828aa88e7e5dbdeee5",
+            measurementId: "G-7P2TVMP0E0"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -648,34 +667,92 @@
         let currentProperty = null;
         let currentRoom = null;
         let activeEmotionIdx = -1;
+        let firebaseReady = false;
+        let db = null, auth = null, storage = null;
+
+        // ============================
+        // FIREBASE INIT (robust)
+        // ============================
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            storage = firebase.storage();
+            firebaseReady = true;
+        } catch(e) {
+            console.warn("Firebase init failed, using offline mode:", e.message);
+        }
+
+        // ============================
+        // MOCK DATA (fallback when Firestore empty)
+        // ============================
+        const MOCK_PROPERTIES = [
+            { id: "mock1", providerId: "demo", type: "alojamiento", name: "Casa Rural El Roble", location: "Sierra de Gredos, Ávila", description: "Casa rural restaurada del siglo XIX con vistas al valle. Perfecta para desconectar del ruido y disfrutar de la naturaleza en estado puro. Chimenea, jardín y horno de leña.", photos: ["https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1560185013-6b12f62b217a?auto=format&fit=crop&w=800&q=80"], amenities: ["Wifi", "Parking", "Chimenea", "Jardín", "Calefacción", "Desayuno"], minPrice: 85, rating: 4.8, totalReviews: 23, status: "approved" },
+            { id: "mock2", providerId: "demo", type: "alojamiento", name: "Cabañas del Bosque", location: "Picos de Europa, Asturias", description: "Cabañas de madera integradas en el bosque. Cada una con su propio encanto: sauna, jacuzzi exterior o hamacas bajo los árboles. Ideal para parejas y familias.", photos: ["https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1587061949409-02df41d5e562?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80"], amenities: ["Jacuzzi", "Parking", "Calefacción", "Vistas al bosque"], minPrice: 120, rating: 4.9, totalReviews: 31, status: "approved" },
+            { id: "mock3", providerId: "demo", type: "restaurante", name: "Mesón La Posada", location: "Pedraza, Segovia", description: "Cocina castellana de autor con productos de temporada. Lechazo, judiones, migas y postres caseros en un edificio del siglo XVI con patio interior.", photos: ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80"], amenities: ["Terraza", "Carta de vinos", "Menú infantil", "Reservas online"], minPrice: 25, rating: 4.6, totalReviews: 47, status: "approved" },
+            { id: "mock4", providerId: "demo", type: "bodega", name: "Bodega Tierra de Viñas", location: "Ribera del Duero, Valladolid", description: "Visitas guiadas por viñedos centenarios y bodega subterránea. Catas de vinos reserva y gran reserva con maridaje de quesos artesanales de la zona.", photos: ["https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1528823872057-9c018a7a7553?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1474722883778-792e7990302f?auto=format&fit=crop&w=800&q=80"], amenities: ["Catas guiadas", "Tienda de vinos", "Eventos privados", "Restaurante"], minPrice: 18, rating: 4.7, totalReviews: 19, status: "approved" },
+            { id: "mock5", providerId: "demo", type: "hipica", name: "Finca Los Encinos", location: "El Escorial, Madrid", description: "Rutas a caballo por la sierra de Guadarrama. Clases para todos los niveles, desde iniciación hasta perfeccionamiento. Convivencia con caballos en libertad.", photos: ["https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1508849789987-4e51a4a7c9b2?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1439694458393-78ec96064761?auto=format&fit=crop&w=800&q=80"], amenities: ["Clases", "Rutas", "Pupilaje", "Eventos"], minPrice: 35, rating: 4.5, totalReviews: 12, status: "approved" },
+            { id: "mock6", providerId: "demo", type: "alojamiento", name: "El Molino del Río", location: "Valle del Jerte, Cáceres", description: "Antiguo molino de agua reconvertido en alojamiento rural con encanto. 4 habitaciones junto al río, rodeado de cerezos. Un paraíso en primavera.", photos: ["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1590490360182-c33d57e13f9b?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80"], amenities: ["Wifi", "Desayuno", "Jardín", "Río", "Calefacción"], minPrice: 95, rating: 4.9, totalReviews: 38, status: "approved" }
+        ];
+
+        const MOCK_ROOMS = [
+            { id: "r1", propertyId: "mock1", name: "Habitación Roble", capacity: 2, price: 85, amenities: ["Cama doble", "Baño privado", "Vistas al valle"] },
+            { id: "r2", propertyId: "mock1", name: "Suite con Chimenea", capacity: 4, price: 120, amenities: ["Chimenea", "Cama king", "Sofá", "Balcón"] },
+            { id: "r3", propertyId: "mock2", name: "Cabaña Bosque", capacity: 2, price: 120, amenities: ["Jacuzzi exterior", "Cama doble", "Hamacas"] },
+            { id: "r4", propertyId: "mock2", name: "Cabaña Familiar", capacity: 5, price: 160, amenities: ["2 habitaciones", "Cocina", "Porche"] },
+            { id: "r5", propertyId: "mock6", name: "Habitación del Molino", capacity: 2, price: 95, amenities: ["Vistas al río", "Cama doble", "Desayuno"] },
+            { id: "r6", propertyId: "mock6", name: "Suite Cerezo", capacity: 3, price: 130, amenities: ["Terraza privada", "Bañera", "Cerezo en ventana"] }
+        ];
+
+        const MOCK_REVIEWS = [
+            { propertyId: "mock1", userId: "demo", userName: "María G.", rating: 5, comment: "Increíble. La chimenea y las vistas hacen que merezca cada céntimo. Volveremos seguro.", createdAt: new Date("2025-03-15") },
+            { propertyId: "mock1", userId: "demo", userName: "Carlos R.", rating: 4, comment: "Muy acogedor. El desayuno casero fue un puntazo. Solo echo de menos más enchufes.", createdAt: new Date("2025-02-20") },
+            { propertyId: "mock2", userId: "demo", userName: "Laura P.", rating: 5, comment: "El jacuzzi bajo las estrellas es una experiencia que no olvidarás jamás. Magia pura.", createdAt: new Date("2025-04-01") },
+            { propertyId: "mock3", userId: "demo", userName: "Javier M.", rating: 5, comment: "El lechazo estaba espectacular. El patio interior es precioso. Reservas necesarias.", createdAt: new Date("2025-03-10") },
+            { propertyId: "mock4", userId: "demo", userName: "Ana S.", rating: 4, comment: "La cata fue muy didáctica y los vinos excelentes. El queso artesano, un 10.", createdAt: new Date("2025-01-25") },
+            { propertyId: "mock6", userId: "demo", userName: "Pedro L.", rating: 5, comment: "Fuimos en época de floración de los cerezos. Es como estar en un cuadro. Precioso.", createdAt: new Date("2025-04-05") }
+        ];
+
+        function getMockRooms(propertyId) { return MOCK_ROOMS.filter(r => r.propertyId === propertyId); }
+        function getMockReviews(propertyId) { return MOCK_REVIEWS.filter(r => r.propertyId === propertyId); }
 
         // ============================
         // AUTH
         // ============================
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                const doc = await db.collection('users').doc(user.uid).get();
-                if (doc.exists) {
-                    currentUser.profile = doc.data();
+        if (auth) {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    if (firebaseReady) {
+                        try {
+                            const doc = await db.collection('users').doc(user.uid).get();
+                            if (doc.exists) {
+                                currentUser.profile = doc.data();
+                            } else {
+                                const profile = { name: user.displayName || 'Usuario', email: user.email, phone: '', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                                await db.collection('users').doc(user.uid).set(profile);
+                                currentUser.profile = profile;
+                            }
+                            const provSnap = await db.collection('providers').where('ownerId', '==', user.uid).limit(1).get();
+                            if (!provSnap.empty) {
+                                currentProvider = provSnap.docs[0];
+                                currentUser.providerId = currentProvider.id;
+                            }
+                        } catch(e) {
+                            currentUser.profile = { name: user.displayName || 'Usuario', email: user.email, phone: '' };
+                            console.warn("Error loading profile:", e);
+                        }
+                    } else {
+                        currentUser.profile = { name: user.displayName || 'Usuario', email: user.email, phone: '' };
+                    }
+                    updateUI();
                 } else {
-                    const profile = { name: user.displayName || 'Usuario', email: user.email, phone: '', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-                    await db.collection('users').doc(user.uid).set(profile);
-                    currentUser.profile = profile;
+                    currentUser = null;
+                    currentProvider = null;
+                    updateUI();
                 }
-                // Check if provider
-                const provSnap = await db.collection('providers').where('ownerId', '==', user.uid).limit(1).get();
-                if (!provSnap.empty) {
-                    currentProvider = provSnap.docs[0];
-                    currentUser.providerId = currentProvider.id;
-                }
-                updateUI();
-            } else {
-                currentUser = null;
-                currentProvider = null;
-                updateUI();
-            }
-        });
+            });
+        }
 
         function updateUI() {
             const authBtns = document.getElementById('auth-buttons');
@@ -843,12 +920,23 @@
             const grid = document.getElementById('public-grid');
             grid.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
             try {
-                const snap = await db.collection('properties').where('status', '==', 'approved').get();
-                allProperties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (firebaseReady) {
+                    const snap = await db.collection('properties').where('status', '==', 'approved').get();
+                    allProperties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (allProperties.length === 0) {
+                        console.log("Firestore vacío, usando datos de ejemplo");
+                        allProperties = [...MOCK_PROPERTIES];
+                    }
+                } else {
+                    console.log("Firebase no disponible, usando datos de ejemplo");
+                    allProperties = [...MOCK_PROPERTIES];
+                }
                 renderProperties(allProperties);
             } catch(err) {
-                console.error(err);
-                grid.innerHTML = '<div class="empty-state"><div class="icon">🏡</div><p>Aún no hay propiedades. ¡Sé el primero en registrarte!</p><button class="btn" style="margin-top:12px;" onclick="openProviderReg()">Quiero ser proveedor</button></div>';
+                console.error("Error cargando propiedades:", err);
+                allProperties = [...MOCK_PROPERTIES];
+                renderProperties(allProperties);
+                toast("Mostrando propiedades de ejemplo", "error");
             }
         }
 
@@ -883,22 +971,72 @@
             else document.getElementById('f-amenities').innerHTML = '';
 
             // Load rooms
-            const roomsSnap = await db.collection('rooms').where('propertyId', '==', id).get();
-            const rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            let rooms = [];
+            if (firebaseReady) {
+                try {
+                    const roomsSnap = await db.collection('rooms').where('propertyId', '==', id).get();
+                    rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                } catch(e) {}
+            }
+            if (rooms.length === 0) rooms = getMockRooms(id);
             document.getElementById('f-rooms').innerHTML = rooms.length > 0 ? rooms.map(r => `<tr><td><strong>${r.name}</strong><br><small style="color:var(--verde);">${(r.amenities||[]).join(' · ')}</small></td><td>${'👤'.repeat(r.capacity || 2)}</td><td><strong>${r.price}€</strong></td><td><button class="btn btn-sm" onclick='selectRoomForBooking(${JSON.stringify(r).replace(/'/g, "\\'")})'>Reservar</button></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No hay habitaciones configuradas aún</td></tr>';
 
             document.getElementById('f-price').textContent = p.minPrice || (rooms.length > 0 ? Math.min(...rooms.map(r => r.price)) : 85);
 
             // Load reviews
-            const revSnap = await db.collection('reviews').where('propertyId', '==', id).orderBy('createdAt', 'desc').limit(5).get();
-            const reviews = revSnap.docs.map(d => d.data());
-            document.getElementById('f-reviews').innerHTML = reviews.length > 0 ? reviews.map(r => `<div class="review-item"><div class="review-header"><span class="review-author">${r.userName || 'Anónimo'}</span><span class="review-date">${r.createdAt ? new Date(r.createdAt.toDate()).toLocaleDateString('es-ES') : ''}</span></div><div class="review-stars">${'⭐'.repeat(r.rating || 5)}</div><div class="review-text">${r.comment || ''}</div></div>`).join('') : '<p style="color:var(--text-muted);padding:16px 0;">Aún no hay valoraciones. ¡Sé el primero!</p>';
+            let reviews = [];
+            if (firebaseReady) {
+                try {
+                    const revSnap = await db.collection('reviews').where('propertyId', '==', id).orderBy('createdAt', 'desc').limit(5).get();
+                    reviews = revSnap.docs.map(d => d.data());
+                } catch(e) {}
+            }
+            if (reviews.length === 0) reviews = getMockReviews(id);
+            const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
+            document.getElementById('f-reviews').innerHTML = reviews.length > 0 ? reviews.map(r => {
+                const dateStr = r.createdAt ? (r.createdAt.toDate ? new Date(r.createdAt.toDate()).toLocaleDateString('es-ES') : new Date(r.createdAt).toLocaleDateString('es-ES')) : '';
+                return `<div class="review-item"><div class="review-header"><span class="review-author">${r.userName || 'Anónimo'}</span><span class="review-date">${dateStr}</span></div><div class="review-stars">${'⭐'.repeat(r.rating || 5)}</div><div class="review-text">${r.comment || ''}</div></div>`;
+            }).join('') : '<p style="color:var(--text-muted);padding:16px 0;">Aún no hay valoraciones. ¡Sé el primero!</p>';
 
             document.getElementById('modal-ficha').style.display = 'block';
             document.getElementById('f-date-in').min = new Date().toISOString().split('T')[0];
+            selectRating(5);
         }
 
         function closeModal() { document.getElementById('modal-ficha').style.display = 'none'; }
+
+        let selectedRating = 5;
+        function selectRating(n) {
+            selectedRating = n;
+            const labels = ['', 'Malo', 'Regular', 'Bien', 'Muy bien', 'Excelente'];
+            document.getElementById('rating-label').textContent = labels[n];
+            document.querySelectorAll('.star-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.rating) <= n);
+                b.textContent = parseInt(b.dataset.rating) <= n ? '★' : '☆';
+            });
+        }
+
+        async function submitReview() {
+            if (!currentUser) { toast('Inicia sesión para valorar', 'error'); return; }
+            if (!currentProperty) return;
+            const rating = parseInt(document.getElementById('review-rating')?.value || 5);
+            const comment = document.getElementById('review-text')?.value?.trim();
+            if (!comment) { toast('Escribe un comentario', 'error'); return; }
+            try {
+                if (firebaseReady) {
+                    await db.collection('reviews').add({
+                        propertyId: currentProperty.id,
+                        userId: currentUser.uid,
+                        userName: currentUser.profile.name || 'Anónimo',
+                        rating, comment,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                toast('¡Gracias por tu valoración!', 'success');
+                document.getElementById('review-text').value = '';
+                openProperty(currentProperty.id);
+            } catch(e) { toast('Error al enviar: ' + e.message, 'error'); }
+        }
         function selectRoomForBooking(room) { currentRoom = room; abrirCheckout(); }
 
         // ============================
@@ -987,6 +1125,7 @@
         async function loadMyBookings() {
             const list = document.getElementById('my-bookings-list');
             list.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
+            if (!firebaseReady) { list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Función disponible con conexión a internet</p></div>'; return; }
             try {
                 const snap = await db.collection('bookings').where('userId', '==', currentUser.uid).orderBy('createdAt', 'desc').get();
                 const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1004,6 +1143,7 @@
 
         async function cancelBooking(id) {
             if (!confirm('¿Seguro que quieres cancelar esta reserva?')) return;
+            if (!firebaseReady) { toast('Sin conexión', 'error'); return; }
             await db.collection('bookings').doc(id).update({ status: 'cancelada' });
             toast('Reserva cancelada', 'success');
             loadMyBookings();
@@ -1012,7 +1152,9 @@
         async function updateProfile() {
             const name = document.getElementById('profile-name').value;
             const phone = document.getElementById('profile-phone').value;
-            await db.collection('users').doc(currentUser.uid).update({ name, phone });
+            if (firebaseReady) {
+                await db.collection('users').doc(currentUser.uid).update({ name, phone });
+            }
             currentUser.profile.name = name;
             currentUser.profile.phone = phone;
             updateUI();
@@ -1079,6 +1221,7 @@
             const phone = document.getElementById('reg-biz-phone').value;
             const desc = document.getElementById('reg-biz-desc').value;
             if (!name || !loc) { toast('Completa nombre y ubicación', 'error'); return; }
+            if (!firebaseReady) { toast('Sin conexión a Firebase', 'error'); return; }
 
             try {
                 await db.collection('providers').add({
@@ -1107,6 +1250,7 @@
             loadExCalendario();
             loadExServicios();
             loadExKPIs();
+            loadExChats();
         }
 
         function showExPanel(id, el) {
@@ -1205,6 +1349,79 @@
             });
             toast('Datos guardados', 'success');
             loadExtranet();
+        }
+
+        // ============================
+        // EXTRANET CHAT
+        // ============================
+        let activeChatId = null;
+
+        async function loadExChats() {
+            const list = document.getElementById('ex-chat-list');
+            if (!list) return;
+            try {
+                const snap = await db.collection('bookings')
+                    .where('providerId', '==', currentProvider.id)
+                    .where('status', 'in', ['pendiente', 'confirmada'])
+                    .orderBy('createdAt', 'desc')
+                    .limit(20)
+                    .get();
+                const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (bookings.length === 0) {
+                    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.9rem;">Sin conversaciones activas</div>';
+                    return;
+                }
+                list.innerHTML = bookings.map(b => `
+                    <div class="chat-item ${activeChatId === b.id ? 'active' : ''}" onclick="openExChat('${b.id}')">
+                        <div class="chat-avatar">${(b.guestName || '?')[0].toUpperCase()}</div>
+                        <div class="chat-item-info">
+                            <div class="chat-item-name">${b.guestName || 'Huésped'}</div>
+                            <div class="chat-item-preview">${b.checkIn} → ${b.checkOut}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Error cargando chats</div>';
+            }
+        }
+
+        function openExChat(bookingId) {
+            activeChatId = bookingId;
+            loadExChats();
+            const tbody = document.getElementById('ex-reservas-body');
+            const rows = tbody?.querySelectorAll('tr');
+            let guestName = 'Huésped';
+            if (rows) {
+                rows.forEach(r => { if (r.getAttribute('data-booking') === bookingId) guestName = r.querySelector('.chat-item-name')?.textContent || 'Huésped'; });
+            }
+            document.getElementById('ex-chat-name').textContent = guestName;
+            document.getElementById('ex-chat-avatar').textContent = guestName[0].toUpperCase();
+            const messages = document.getElementById('ex-chat-messages');
+            messages.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>Escribe el primer mensaje</p></div>';
+        }
+
+        async function sendExMessage() {
+            const input = document.getElementById('ex-chat-input');
+            const text = input.value.trim();
+            if (!text || !activeChatId) return;
+            const messages = document.getElementById('ex-chat-messages');
+            if (messages.querySelector('.empty-state')) messages.innerHTML = '';
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble provider';
+            bubble.textContent = text;
+            bubble.style.cssText = 'background:var(--verde);color:white;padding:8px 14px;border-radius:16px 16px 4px 16px;max-width:70%;margin:4px 0 4px auto;';
+            messages.appendChild(bubble);
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
+            if (firebaseReady) {
+                try {
+                    await db.collection('messages').add({
+                        bookingId: activeChatId, providerId: currentProvider.id,
+                        text, sender: 'provider',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch(e) {}
+            }
         }
 
         // ============================
