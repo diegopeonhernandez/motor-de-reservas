@@ -648,12 +648,8 @@
             appId: "1:834654642688:web:5e67828aa88e7e5dbdeee5",
             measurementId: "G-7P2TVMP0E0"
         };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        // STRIPE: Reemplaza con tu clave pública real
+        // STRIPE: Reemplaza con tu clave p blica real
         const STRIPE_KEY = "pk_test_REPLACE_WITH_YOUR_KEY";
         let stripe = null;
         try { stripe = Stripe(STRIPE_KEY); } catch(e) { console.log("Stripe no configurado"); }
@@ -677,11 +673,22 @@
             dbg.style.cssText = 'position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.85);color:#0f0;padding:10px 14px;font-size:11px;font-family:monospace;z-index:99999;border-radius:8px;line-height:1.6;max-width:320px;';
             dbg.innerHTML = '[1/4] JS OK';
             document.body.appendChild(dbg);
-            try {
-                document.getElementById('_dbg').innerHTML += '<br>[2/4] DOM OK';
-            } catch(e) {
-                document.getElementById('_dbg').innerHTML += '<br>[2/4] DOM FAIL: ' + e.message;
-            }
+        })();
+
+        // ============================
+        // FIREBASE INIT (wrapped in try/catch)
+        // ============================
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            storage = firebase.storage();
+            firebaseReady = true;
+            if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[2/4] Firebase READY';
+        } catch(e) {
+            console.warn("Firebase init failed, using offline mode:", e.message);
+            if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[2/4] Firebase OFFLINE (' + e.message.substring(0, 60) + ')';
+        }
         })();
 
         // ============================
