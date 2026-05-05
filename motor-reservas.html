@@ -676,7 +676,7 @@
         })();
 
         // ============================
-        // FIREBASE INIT (wrapped in try/catch)
+        // FIREBASE INIT
         // ============================
         try {
             firebase.initializeApp(firebaseConfig);
@@ -688,20 +688,6 @@
         } catch(e) {
             console.warn("Firebase init failed, using offline mode:", e.message);
             if (document.getElementById('_dbg')) document.getElementById('_dbg').innerHTML += '<br>[2/4] Firebase OFFLINE (' + e.message.substring(0, 60) + ')';
-        }
-        })();
-
-        // ============================
-        // FIREBASE INIT (robust)
-        // ============================
-        try {
-            firebase.initializeApp(firebaseConfig);
-            auth = firebase.auth();
-            db = firebase.firestore();
-            storage = firebase.storage();
-            firebaseReady = true;
-        } catch(e) {
-            console.warn("Firebase init failed, using offline mode:", e.message);
         }
 
         // ============================
