@@ -66,7 +66,7 @@
 
         /* HERO SLIDER */
         .hero-clean { position: relative; overflow: hidden; height: 540px; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .hero-slides { position: absolute; inset: 0; }
+        .hero-slides { position: absolute; inset: 0; background: linear-gradient(135deg, #5b7f3b 0%, #3a5225 50%, #8b6f47 100%); }
         .hero-slide { position: absolute; inset: 0; opacity: 0; background-size: cover; background-position: center; transition: opacity 1.5s ease-in-out; }
         .hero-slide.active { opacity: 1; }
         .hero-clean::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(20,18,12,0.30) 0%, rgba(20,18,12,0.50) 100%); }
@@ -669,6 +669,20 @@
         let activeEmotionIdx = -1;
         let firebaseReady = false;
         let db = null, auth = null, storage = null;
+
+        // Quick debug indicator
+        (function() {
+            var dbg = document.createElement('div');
+            dbg.id = '_dbg';
+            dbg.style.cssText = 'position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.85);color:#0f0;padding:10px 14px;font-size:11px;font-family:monospace;z-index:99999;border-radius:8px;line-height:1.6;max-width:320px;';
+            dbg.innerHTML = '[1/4] JS OK';
+            document.body.appendChild(dbg);
+            try {
+                document.getElementById('_dbg').innerHTML += '<br>[2/4] DOM OK';
+            } catch(e) {
+                document.getElementById('_dbg').innerHTML += '<br>[2/4] DOM FAIL: ' + e.message;
+            }
+        })();
 
         // ============================
         // FIREBASE INIT (robust)
@@ -1509,9 +1523,18 @@
         // ============================
         // INIT
         // ============================
+        var _dbg = document.getElementById('_dbg');
+        if (_dbg) {
+            _dbg.innerHTML += '<br>[3/4] Firebase: ' + (firebaseReady ? 'READY' : 'OFFLINE');
+        }
         renderEmotions();
         initHeroSlider();
-        loadProperties();
+        loadProperties().then(function() {
+            if (_dbg) {
+                _dbg.innerHTML += '<br>[4/4] Properties: ' + allProperties.length;
+                setTimeout(function() { _dbg.style.transition = 'opacity 2s'; _dbg.style.opacity = '0'; setTimeout(function() { _dbg.remove(); }, 2000); }, 5000);
+            }
+        });
     </script>
 </body>
 </html>
