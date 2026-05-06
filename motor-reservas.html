@@ -1099,6 +1099,7 @@
                 window.location.href = result.data.url;
             } catch(err) {
                 console.error(err);
+                alert("ERROR DE PAGO: " + err.message);
                 toast('Error al procesar: ' + err.message, 'error');
                 btn.disabled = false;
                 btn.textContent = 'Pagar ahora';
