@@ -1513,20 +1513,31 @@
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         if (sessionId && typeof firebase !== 'undefined' && firebase.functions) {
-            // Verify payment and save booking
-            const verifyFn = firebase.functions().httpsCallable('verifyAndSaveBooking');
-            verifyFn({ sessionId: sessionId })
-                .then(res => {
-                    if (res.data.success) {
-                        toast('¡Reserva confirmada! El pago se ha procesado correctamente.', 'success');
-                    }
-                })
-                .catch(err => {
-                    toast('Error verificando pago: ' + err.message, 'error');
-                })
-                .finally(() => {
-                    window.history.replaceState({}, document.title, window.location.pathname);
+            // Esperar a que Firebase Auth restaure la sesión antes de verificar
+            const waitForAuth = () => {
+                return new Promise(resolve => {
+                    if (firebaseReady && auth) {
+                        auth.onAuthStateChanged(user => resolve(!!user));
+                        setTimeout(() => resolve(false), 5000); // timeout 5s
+                    } else { resolve(false); }
                 });
+            };
+            waitForAuth().then(isAuthed => {
+                if (!isAuthed) { toast('Sesión expirada. Inicia sesión para verificar tu pago.', 'error'); window.history.replaceState({}, document.title, window.location.pathname); return; }
+                const verifyFn = firebase.functions().httpsCallable('verifyAndSaveBooking');
+                verifyFn({ sessionId: sessionId })
+                    .then(res => {
+                        if (res.data.success) {
+                            toast('¡Reserva confirmada! El pago se ha procesado correctamente.', 'success');
+                        }
+                    })
+                    .catch(err => {
+                        toast('Error verificando pago: ' + err.message, 'error');
+                    })
+                    .finally(() => {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    });
+            });
         } else if (urlParams.get('cancelled')) {
             toast('El pago fue cancelado.', 'error');
             window.history.replaceState({}, document.title, window.location.pathname);
