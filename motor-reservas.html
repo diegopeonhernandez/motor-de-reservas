@@ -1126,8 +1126,13 @@
             list.innerHTML = '<div class="loader"><div class="loader-circle"></div></div>';
             if (!firebaseReady) { list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Función disponible con conexión a internet</p></div>'; return; }
             try {
-                const snap = await db.collection('bookings').where('userId', '==', currentUser.uid).orderBy('createdAt', 'desc').get();
-                const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const snap = await db.collection('bookings').where('userId', '==', currentUser.uid).get();
+                let bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                bookings.sort((a, b) => {
+                    const da = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : 0) : 0;
+                    const db2 = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : 0) : 0;
+                    return db2 - da;
+                });
                 if (bookings.length === 0) { list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Aún no tienes reservas</p></div>'; return; }
                 list.innerHTML = bookings.map(b => {
                     const prop = allProperties.find(p => p.id === b.propertyId);
@@ -1137,7 +1142,7 @@
                         ${b.status === 'pendiente' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking('${b.id}')">Cancelar</button>` : ''}
                     </div>`;
                 }).join('');
-            } catch(err) { list.innerHTML = '<div class="empty-state"><p>Error cargando reservas</p></div>'; }
+            } catch(err) { list.innerHTML = '<div class="empty-state"><p>Error cargando reservas: ' + err.message + '</p></div>'; }
         }
 
         async function cancelBooking(id) {
@@ -1513,12 +1518,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         if (sessionId && typeof firebase !== 'undefined' && firebase.functions) {
-            // Esperar a que Firebase Auth restaure la sesión antes de verificar
             const waitForAuth = () => {
                 return new Promise(resolve => {
                     if (firebaseReady && auth) {
                         auth.onAuthStateChanged(user => resolve(!!user));
-                        setTimeout(() => resolve(false), 5000); // timeout 5s
+                        setTimeout(() => resolve(false), 5000);
                     } else { resolve(false); }
                 });
             };
@@ -1529,9 +1533,12 @@
                     .then(res => {
                         if (res.data.success) {
                             toast('¡Reserva confirmada! El pago se ha procesado correctamente.', 'success');
+                            setTimeout(() => loadMyBookings(), 1000);
                         }
                     })
                     .catch(err => {
+                        console.error("VERIFY ERROR:", err);
+                        alert("DEBUG VERIFICACIÓN:\n\nCódigo: " + (err.code || 'N/A') + "\nMensaje: " + (err.message || err.details || 'Desconocido'));
                         toast('Error verificando pago: ' + err.message, 'error');
                     })
                     .finally(() => {
