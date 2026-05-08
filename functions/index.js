@@ -17,6 +17,10 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
 
     const { propertyId, roomId, checkIn, checkOut, nights, totalPrice } = data;
 
+    // Obtener el providerId de la propiedad
+    const propDoc = await db.collection('properties').doc(propertyId).get();
+    const providerId = propDoc.exists ? (propDoc.data().providerId || propDoc.data().ownerId || 'unknown') : 'unknown';
+
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -39,6 +43,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
             userId: context.auth.uid,
             propertyId,
             roomId,
+            providerId,
             checkIn,
             checkOut,
             nights,

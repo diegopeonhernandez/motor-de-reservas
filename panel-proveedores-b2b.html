@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCHow523fM8oLbs75NjhKkF4_tSl3qVJEo",
@@ -15,7 +16,7 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
-</script>
+  const auth = firebase.auth();
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root {
@@ -138,6 +139,18 @@ body {
 </style>
 </head>
 <body>
+<div id="login-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(9,9,11,0.98);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:48px 40px;max-width:400px;width:90%;text-align:center;">
+    <div class="logo-txt" style="font-size:28px;margin-bottom:8px;">escá<span>pate</span></div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:32px;">Accede con tu cuenta de proveedor</p>
+    <button onclick="loginWithGoogle()" style="width:100%;padding:14px;background:#fff;color:#111;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.21 1.126-.834 2.08-1.777 2.717v2.258h2.878c1.684-1.551 2.697-3.833 2.697-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.878-2.258c-.8.534-1.827.85-3.078.85-2.361 0-4.361-1.584-5.074-3.713H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.926 10.959A5.41 5.41 0 0 1 3.59 9c0-.593.102-1.17.284-1.707V5.96H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.04l2.969-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 5.96l2.969 2.332C4.678 5.167 6.678 3.58 9 3.58z"/></svg>
+      Continuar con Google
+    </button>
+    <p id="login-error" style="color:var(--rojo);font-size:12px;margin-top:12px;display:none;"></p>
+  </div>
+</div>
+
 <div class="layout">
   <div class="sidebar">
     <div class="sidebar-logo">
@@ -717,6 +730,93 @@ async function loadBookings() {
 
 loadData();
 loadBookings();
+
+// LOGIN LOGIC
+let currentProviderId = null;
+
+function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => {
+    document.getElementById('login-error').textContent = err.message;
+    document.getElementById('login-error').style.display = 'block';
+  });
+}
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // Verificar si es proveedor
+    try {
+      const snap = await db.collection('providers').where('ownerId', '==', user.uid).limit(1).get();
+      if (!snap.empty) {
+        currentProviderId = snap.docs[0].id;
+        document.getElementById('login-overlay').style.display = 'none';
+        // Recargar reservas con el ID correcto
+        loadBookings();
+      } else {
+        document.getElementById('login-error').textContent = 'No tienes un negocio registrado.';
+        document.getElementById('login-error').style.display = 'block';
+        auth.signOut();
+      }
+    } catch(err) {
+      console.error("Error verificando proveedor:", err);
+    }
+  } else {
+    currentProviderId = null;
+  }
+});
+
+// Modificar loadBookings para usar el ID real
+async function loadBookings() {
+  try {
+    const tbody = document.getElementById('bookings-body');
+    if (!tbody) return;
+    
+    if (!currentProviderId) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);">Inicia sesión para ver tus reservas.</td></tr>';
+        return;
+    }
+    
+    // Filtrar por providerId real
+    const snapshot = await db.collection('bookings').where('providerId', '==', currentProviderId).orderBy('createdAt', 'desc').limit(20).get();
+    
+    let html = '';
+    if (snapshot.empty) {
+        html = '<tr><td colspan="5" style="text-align:center">No tienes reservas reales aún.</td></tr>';
+    } else {
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id.substring(0, 6).toUpperCase();
+            const huesped = data.userName ? data.userName : (data.userId ? 'Huésped #' + data.userId.substring(0,4) : 'Huésped Anónimo');
+            const checkIn = data.checkIn || '-';
+            const checkOut = data.checkOut || '-';
+            const isPagado = data.paymentStatus === 'paid' || data.status === 'confirmada';
+            
+            const statusBadge = isPagado 
+              ? '<span style="background:var(--verde-l); color:var(--verde-bright); padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold;">CONFIRMADA (PAGADO)</span>'
+              : `<span style="background:var(--surface); color:var(--text-dim); padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold;">${(data.status || 'PENDIENTE').toUpperCase()}</span>`;
+            
+            const precio = data.totalPrice ? ` - ${data.totalPrice}€` : '';
+            
+            html += `<tr>
+                <td style="font-weight:600;">#ESC-${id}</td>
+                <td>${huesped}${precio}</td>
+                <td>${checkIn} → ${checkOut}</td>
+                <td>${statusBadge}</td>
+                <td>Stripe / Motor Web</td>
+            </tr>`;
+        });
+    }
+    
+    // Mantengo los ejemplos estáticos debajo
+    html += ` ... `; // (Ejemplos estáticos)
+    
+    tbody.innerHTML = html;
+  } catch (e) {
+    console.error("Error cargando reservas de Firestore:", e);
+    const tbody = document.getElementById('bookings-body');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rojo);">Error: ' + e.message + '</td></tr>';
+  }
+}
 </script>
 </body>
 </html>
